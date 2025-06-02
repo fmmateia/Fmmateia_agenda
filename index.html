@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔐 Agenda Fábio</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #222;
+      --accent: #0070f3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --card: #1e1e1e;
+        --text: #e4e4e4;
+        --accent: #3ea6ff;
+      }
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .evento {
+      background: var(--card);
+      padding: 15px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-left: 6px solid var(--accent);
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #999;
+      border-radius: 8px;
+      margin-top: 5px;
+      font-size: 15px;
+      background: var(--card);
+      color: var(--text);
+    }
+    button {
+      margin-top: 20px;
+      padding: 14px;
+      width: 100%;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #resposta {
+      font-weight: bold;
+      text-align: center;
+      margin-top: 15px;
+    }
+    #login {
+      max-width: 400px;
+      margin: auto;
+      display: none;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Agenda Fábio</h1>
+  <div id="login">
+    <label>Introduz a senha para aceder:</label>
+    <input type="password" id="senha" placeholder="Senha..." />
+    <button onclick="verificarSenha()">Entrar</button>
+    <p id="erro" style="color: red;"></p>
+  </div>
+  <div id="app" style="display:none;">
+    <div id="eventos"></div>
+    <button onclick="adicionarEvento()">➕ Adicionar Evento</button>
+    <button onclick="enviarTodos()">📤 Enviar Todos</button>
+    <p id="resposta"></p>
+  </div>
+  <footer>Assistente Fábio · Protegido & Modo Escuro Ativo</footer>
+  <script>
+    const SENHA_CORRETA = "fabio2025";
+    function verificarSenha() {
+      const input = document.getElementById("senha").value;
+      if (input === SENHA_CORRETA) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        adicionarEvento();
+      } else {
+        document.getElementById("erro").innerText = "Senha incorreta. Tenta novamente.";
+      }
+    }
+    let contador = 0;
+    function adicionarEvento() {
+      contador++;
+      const container = document.getElementById("eventos");
+      const div = document.createElement("div");
+      div.className = "evento";
+      div.innerHTML = `
+        <label>Título do Evento</label>
+        <input type="text" id="titulo_${contador}" placeholder="Ex: Consulta" />
+        <label>Data</label>
+        <input type="date" id="data_${contador}" />
+        <label>Hora de Início</label>
+        <input type="time" id="hora_inicio_${contador}" />
+        <label>Hora de Fim</label>
+        <input type="time" id="hora_fim_${contador}" />
+      `;
+      container.appendChild(div);
+    }
+    async function enviarTodos() {
+      const resposta = document.getElementById("resposta");
+      resposta.innerText = "⏳ A enviar...";
+      for (let i = 1; i <= contador; i++) {
+        const evento = {
+          titulo: document.getElementById(`titulo_${i}`).value,
+          data_inicio: document.getElementById(`data_${i}`).value,
+          hora_inicio: document.getElementById(`hora_inicio_${i}`).value,
+          hora_fim: document.getElementById(`hora_fim_${i}`).value,
+        };
+        try {
+          await fetch("https://agenda-fabio-final.vercel.app/api", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(evento)
+          });
+        } catch (e) {
+          resposta.innerText = "❌ Erro ao enviar evento " + i + ": " + e;
+          return;
+        }
+      }
+      resposta.innerText = "✅ Todos os eventos foram enviados com sucesso!";
+    }
+    document.getElementById("login").style.display = "block";
+  </script>
+</body>
+</html>
