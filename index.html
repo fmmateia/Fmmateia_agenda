@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -113,6 +112,7 @@
         document.getElementById("erro").innerText = "Senha incorreta. Tenta novamente.";
       }
     }
+
     let contador = 0;
     function adicionarEvento() {
       contador++;
@@ -131,6 +131,7 @@
       `;
       container.appendChild(div);
     }
+
     async function enviarTodos() {
       const resposta = document.getElementById("resposta");
       resposta.innerText = "⏳ A enviar...";
@@ -142,7 +143,7 @@
           hora_fim: document.getElementById(`hora_fim_${i}`).value,
         };
         try {
-          await fetch("https://agenda-fabio-final.vercel.app/api", {
+          await fetch("/api", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(evento)
@@ -154,7 +155,9 @@
       }
       resposta.innerText = "✅ Todos os eventos foram enviados com sucesso!";
     }
+
     document.getElementById("login").style.display = "block";
   </script>
 </body>
 </html>
+
