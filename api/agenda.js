@@ -1,5 +1,16 @@
 import { google } from "googleapis";
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
+
 export async function POST(req) {
   try {
     const auth = new google.auth.OAuth2(
@@ -17,7 +28,7 @@ export async function POST(req) {
     if (!calendarId) {
       return new Response(JSON.stringify({ error: "GOOGLE_CALENDAR_ID não definido" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
@@ -45,15 +56,20 @@ export async function POST(req) {
 
     return new Response(JSON.stringify(resposta), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
     });
 
   } catch (error) {
     console.error("Erro Google API:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
     });
   }
 }
-
