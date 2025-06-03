@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "googleapis": "^118.0.0",
-    "dotenv": "^16.4.5"
+    "googleapis": "^149.0.0",
+    "dotenv": "^16.5.0"
   }
 }
 
