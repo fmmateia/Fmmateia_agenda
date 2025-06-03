@@ -1,10 +1,6 @@
 import { google } from "googleapis";
 
 export async function POST(req) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
   try {
     const auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -30,8 +26,7 @@ export async function POST(req) {
 
     const resposta = [];
 
-    for (let i = 0; i < eventos.data.items.length; i++) {
-      const evento = eventos.data.items[i];
+    for (const evento of eventos.data.items) {
       if (!evento.start?.dateTime || !evento.end?.dateTime) continue;
 
       const data = evento.start.dateTime.slice(0, 10);
@@ -41,11 +36,16 @@ export async function POST(req) {
       resposta.push({ data, inicio, fim, status: "ocupado" });
     }
 
-    res.status(200).json(resposta);
+    return new Response(JSON.stringify(resposta), {
+      headers: { "Content-Type": "application/json" },
+      status: 200
+    });
+
   } catch (error) {
     console.error("Erro Google API:", error);
-    res.status(500).json({ message: "Erro ao obter agenda", erro: error.toString() });
+    return new Response(JSON.stringify({ message: "Erro ao obter agenda", erro: error.toString() }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
-
-
