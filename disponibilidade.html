@@ -50,6 +50,24 @@
   <h1>📅 Disponibilidade do Fábio</h1>
   <div id="agenda"></div>
   <script>
+    function gerarBlocosHora() {
+      const blocos = [];
+      let hora = 8;
+      while (hora < 20) {
+        const inicio = hora.toString().padStart(2, '0') + ':00';
+        const fim = (hora + 1).toString().padStart(2, '0') + ':00';
+        blocos.push({ inicio, fim });
+        hora++;
+      }
+      return blocos;
+    }
+
+    function blocoOcupado(bloco, ocupados) {
+      return ocupados.some(o => {
+        return !(bloco.fim <= o.inicio || bloco.inicio >= o.fim);
+      });
+    }
+
     async function carregarAgenda() {
       const res = await fetch("https://fmmateia-agenda.vercel.app/api/agenda", {
         method: "POST",
@@ -67,22 +85,14 @@
         header.textContent = dia.data;
         container.appendChild(header);
 
-        dia.ocupados.forEach(b => {
+        const blocos = gerarBlocosHora();
+        blocos.forEach(bloco => {
+          const ocupado = blocoOcupado(bloco, dia.ocupados);
           const div = document.createElement("div");
-          div.className = "slot ocupado";
+          div.className = "slot " + (ocupado ? "ocupado" : "livre");
           div.innerHTML = `
-            <span class="label">${b.inicio} – ${b.fim}</span>
-            <span class="status">Ocupado</span>
-          `;
-          container.appendChild(div);
-        });
-
-        dia.livres.forEach(b => {
-          const div = document.createElement("div");
-          div.className = "slot livre";
-          div.innerHTML = `
-            <span class="label">${b.inicio} – ${b.fim}</span>
-            <span class="status">Disponível</span>
+            <span class="label">${bloco.inicio} – ${bloco.fim}</span>
+            <span class="status">${ocupado ? "Ocupado" : "Disponível"}</span>
           `;
           container.appendChild(div);
         });
