@@ -1,29 +1,94 @@
-async function carregarAgenda() {
-  try {
-    const res = await fetch("/api/agenda", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📅 Disponibilidade - Fábio</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --text: #222;
+      --accent: #0070f3;
+      --busy: #ff4d4f;
+      --free: #52c41a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --card: #1e1e1e;
+        --text: #e4e4e4;
+        --accent: #3ea6ff;
+        --busy: #ff7875;
+        --free: #95de64;
+      }
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      max-width: 480px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .slot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 6px solid;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .busy { border-color: var(--busy); }
+    .free { border-color: var(--free); }
+    .label { font-weight: 500; }
+    .status { font-weight: bold; text-transform: uppercase; }
+    #erro { color: red; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>📅 Disponibilidade do Fábio</h1>
+  <div id="agenda"></div>
+  <p id="erro"></p>
 
-    const dados = await res.json(); // <-- aqui estava o erro
+  <script>
+    async function carregarAgenda() {
+      try {
+        const res = await fetch("/api/agenda", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
 
-    const container = document.getElementById("agenda");
-    container.innerHTML = "";
+        const dados = await res.json();
 
-    dados.forEach(item => {
-      const div = document.createElement("div");
-      div.className = `slot ${item.status === 'ocupado' ? 'busy' : 'free'}`;
-      div.innerHTML = `
-        <div class="label">${item.data} · ${item.inicio} – ${item.fim}</div>
-        <div class="status">${item.status === 'ocupado' ? 'Ocupado' : 'Disponível'}</div>
-      `;
-      container.appendChild(div);
-    });
-  } catch (e) {
-    document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
-  }
-}
-  carregarAgenda();
+        const container = document.getElementById("agenda");
+        container.innerHTML = "";
+
+        dados.forEach(item => {
+          const div = document.createElement("div");
+          div.className = `slot ${item.status === 'ocupado' ? 'busy' : 'free'}`;
+          div.innerHTML = `
+            <div class="label">${item.data} · ${item.inicio} – ${item.fim}</div>
+            <div class="status">${item.status === 'ocupado' ? 'Ocupado' : 'Disponível'}</div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
+      }
+    }
+
+    carregarAgenda();
   </script>
-
+</body>
+</html>
