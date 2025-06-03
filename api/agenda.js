@@ -11,34 +11,10 @@ export async function OPTIONS() {
   });
 }
 
-function gerarBlocosLivres(eventos, inicioDia = "08:00", fimDia = "20:00") {
-  const toDate = (time) => new Date(`1970-01-01T${time}:00Z`);
-  const blocos = [];
-  let horaAtual = toDate(inicioDia);
-  const horaFim = toDate(fimDia);
-
-  while (horaAtual < horaFim) {
-    const blocoInicio = new Date(horaAtual);
-    const blocoFim = new Date(horaAtual);
-    blocoFim.setHours(blocoFim.getHours() + 1);
-
-    const ocupado = eventos.some(evento => {
-      const inicio = toDate(evento.inicio);
-      const fim = toDate(evento.fim);
-      return !(blocoFim <= inicio || blocoInicio >= fim);
-    });
-
-    if (!ocupado) {
-      blocos.push({
-        inicio: blocoInicio.toISOString().slice(11, 16),
-        fim: blocoFim.toISOString().slice(11, 16),
-      });
-    }
-
-    horaAtual.setHours(horaAtual.getHours() + 1);
-  }
-
-  return blocos;
+function normalizarHorario(dateTimeStr) {
+  const [data, horaCompleta] = dateTimeStr.split('T');
+  const [hora, minuto] = horaCompleta.slice(0,5).split(':');
+  return `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}`;
 }
 
 export async function POST(req) {
@@ -78,9 +54,8 @@ export async function POST(req) {
       if (!evento.start?.dateTime || !evento.end?.dateTime) return null;
       return {
         data: evento.start.dateTime.slice(0, 10),
-        inicio: evento.start.dateTime.slice(11, 16),
-        fim: evento.end.dateTime.slice(11, 16),
-        status: "ocupado"
+        inicio: normalizarHorario(evento.start.dateTime),
+        fim: normalizarHorario(evento.end.dateTime),
       };
     }).filter(Boolean);
 
@@ -90,11 +65,22 @@ export async function POST(req) {
       dias[ev.data].push({ inicio: ev.inicio, fim: ev.fim });
     });
 
+    const gerarBlocosFixos = (ocupados) => {
+      const blocos = [];
+      for (let h = 8; h < 20; h++) {
+        const inicio = `${String(h).padStart(2, '0')}:00`;
+        const fim = `${String(h + 1).padStart(2, '0')}:00`;
+
+        const sobrepoe = ocupados.some(ev => !(fim <= ev.inicio || inicio >= ev.fim));
+        blocos.push({ inicio, fim, status: sobrepoe ? "ocupado" : "disponível" });
+      }
+      return blocos;
+    };
+
     const resposta = Object.entries(dias).map(([data, ocupados]) => {
       return {
         data,
-        ocupados,
-        livres: gerarBlocosLivres(ocupados)
+        blocos: gerarBlocosFixos(ocupados)
       };
     });
 
@@ -115,4 +101,4 @@ export async function POST(req) {
       },
     });
   }
-}
+} 
