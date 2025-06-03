@@ -63,7 +63,7 @@
   <script>
     async function carregarAgenda() {
       try {
-        const res = await fetch("/api/agenda", {
+        const res = await fetch("https://fmmateia-agenda.vercel.app/api/agenda", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({})
