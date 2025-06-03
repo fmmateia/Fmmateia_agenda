@@ -84,7 +84,6 @@ export async function POST(req) {
       };
     }).filter(Boolean);
 
-    // Agrupar por dia
     const dias = {};
     eventosFormatados.forEach(ev => {
       if (!dias[ev.data]) dias[ev.data] = [];
