@@ -34,7 +34,7 @@
     .ocupado {
       border-color: #ff4d4f;
     }
-    .livre {
+    .disponível {
       border-color: #52c41a;
     }
     .label {
@@ -50,24 +50,6 @@
   <h1>📅 Disponibilidade do Fábio</h1>
   <div id="agenda"></div>
   <script>
-    function gerarBlocosHora() {
-      const blocos = [];
-      let hora = 8;
-      while (hora < 20) {
-        const inicio = hora.toString().padStart(2, '0') + ':00';
-        const fim = (hora + 1).toString().padStart(2, '0') + ':00';
-        blocos.push({ inicio, fim });
-        hora++;
-      }
-      return blocos;
-    }
-
-    function blocoOcupado(bloco, ocupados) {
-      return ocupados.some(o => {
-        return !(bloco.fim <= o.inicio || bloco.inicio >= o.fim);
-      });
-    }
-
     async function carregarAgenda() {
       const res = await fetch("https://fmmateia-agenda.vercel.app/api/agenda", {
         method: "POST",
@@ -85,14 +67,12 @@
         header.textContent = dia.data;
         container.appendChild(header);
 
-        const blocos = gerarBlocosHora();
-        blocos.forEach(bloco => {
-          const ocupado = blocoOcupado(bloco, dia.ocupados);
+        dia.blocos.forEach(bloco => {
           const div = document.createElement("div");
-          div.className = "slot " + (ocupado ? "ocupado" : "livre");
+          div.className = "slot " + bloco.status;
           div.innerHTML = `
             <span class="label">${bloco.inicio} – ${bloco.fim}</span>
-            <span class="status">${ocupado ? "Ocupado" : "Disponível"}</span>
+            <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
           `;
           container.appendChild(div);
         });
