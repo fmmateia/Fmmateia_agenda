@@ -1,4 +1,8 @@
-export async function POST(req) {
+export default async function handler(req, res) {
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
   try {
     const agenda = [
       { data: "2025-06-01", inicio: "09:00", fim: "10:00", status: "ocupado" },
@@ -7,14 +11,9 @@ export async function POST(req) {
       { data: "2025-06-03", inicio: "15:00", fim: "16:00", status: "ocupado" }
     ];
 
-    return new Response(JSON.stringify(agenda), {
-      headers: { "Content-Type": "application/json" },
-      status: 200
-    });
+    res.status(200).json(agenda);
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Erro ao gerar agenda" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    res.status(500).json({ error: "Erro ao gerar agenda", detalhes: error.toString() });
   }
 }
+
