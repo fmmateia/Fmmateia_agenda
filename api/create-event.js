@@ -2,7 +2,7 @@
 
 import { google } from "googleapis";
 
-// OPTIONS para CORS
+// Permite OPTIONS (prólogo CORS)
 export async function OPTIONS() {
   return new Response(null, {
     status: 200,
@@ -14,11 +14,13 @@ export async function OPTIONS() {
   });
 }
 
-// Função POST para criar o evento
+// Função POST para criar um evento no Google Calendar
 export async function POST(req) {
   try {
+    // 1) Lê o corpo JSON enviado pelo front-end
     const { titulo, data_inicio, hora_inicio, hora_fim } = await req.json();
 
+    // Validação simples de campos obrigatórios
     if (!data_inicio || !hora_inicio || !hora_fim) {
       return new Response(
         JSON.stringify({ error: "Faltam campos obrigatórios" }),
@@ -32,12 +34,14 @@ export async function POST(req) {
       );
     }
 
-    // Autenticação
+    // 2) Autentica com o OAuth2 usando variáveis de ambiente
     const auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
     );
-    auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+    auth.setCredentials({
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+    });
 
     const calendar = google.calendar({ version: "v3", auth });
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
@@ -54,22 +58,31 @@ export async function POST(req) {
       );
     }
 
-    // Montar datas em formato ISO completo
+    // 3) Monta as strings de start/end no formato completo ISO com segundos
+    // Antes estava: "YYYY-MM-DDTHH:MM:00" (sem timezone) → agora mantemos o mesmo
     const startDateTime = `${data_inicio}T${hora_inicio}:00`;
-    const endDateTime = `${data_inicio}T${hora_fim}:00`;
+    const endDateTime   = `${data_inicio}T${hora_fim}:00`;
 
+    // 4) Monta o objeto “event” incluindo explicitamente a timezone
     const event = {
       summary: titulo || "Evento marcado via app",
-      start: { dateTime: startDateTime },
-      end: { dateTime: endDateTime },
+      start: {
+        dateTime: startDateTime,
+        timeZone: "Europe/Lisbon"   // Coloca o teu timezone aqui
+      },
+      end: {
+        dateTime: endDateTime,
+        timeZone: "Europe/Lisbon"
+      },
     };
 
-    // Inserir evento
+    // 5) Insere o evento no Calendar
     await calendar.events.insert({
       calendarId,
       requestBody: event,
     });
 
+    // 6) Responde com sucesso
     return new Response(
       JSON.stringify({ message: "Evento criado com sucesso" }),
       {
@@ -81,10 +94,9 @@ export async function POST(req) {
       }
     );
   } catch (error) {
-    // Aqui devolvemos o message completo do erro para diagnosticar
+    // 7) Em caso de erro, devolve JSON com “error” e “details” para diagnóstico
     console.error("Erro ao criar evento:", error);
 
-    // Caso seja um erro vindo do Google API (GaxiosError), tentamos capturar detalhes
     let detalhes = error.message;
     if (error.response?.data) {
       try {
@@ -109,3 +121,4 @@ export async function POST(req) {
     );
   }
 }
+
