@@ -95,45 +95,54 @@
   <p id="erro"></p>
 
   <script>
-    // Retorna a string “YYYY-MM-DD” do dia atual
+    // Retorna “YYYY-MM-DD” do dia atual
     function hojeStr() {
-      const h = new Date();
-      return h.toISOString().split("T")[0];
+      const hj = new Date();
+      return hj.toISOString().split("T")[0];
+    }
+
+    // Retorna a hora atual no formato “HH:MM” (zero-padded)
+    function horaAtualStr() {
+      const hj = new Date();
+      const h = String(hj.getHours()).padStart(2, "0");
+      const m = String(hj.getMinutes()).padStart(2, "0");
+      return `${h}:${m}`;
     }
 
     async function carregarAgenda() {
       try {
-        // 1) Chama a API via GET (rota relativa) – CORS já está configurado no backend
         const res = await fetch("/api/agenda");
         if (!res.ok) {
-          throw new Error("API retornou " + res.status + " " + res.statusText);
+          throw new Error("API retornou " + res.status);
         }
         const dados = await res.json();
 
-        // 2) Pega o <div id="agenda"> e limpa
         const container = document.getElementById("agenda");
         container.innerHTML = "";
         document.getElementById("erro").innerText = "";
 
         const hoje = hojeStr();
+        const horaAgora = horaAtualStr();
 
-        // 3) Filtra somente dias >= hoje (caso não queiras mostrar datas passadas)
+        // Filtra apenas dias >= hoje
         const diasFuturos = dados.filter(diaObj => diaObj.data >= hoje);
 
-        // 4) Para cada dia, cria o título e depois os blocos
         diasFuturos.forEach(diaObj => {
-          // 4.1) Título do dia
+          // Cria e adiciona o cabeçalho do dia (ex.: “2025-06-04”)
           const titulo = document.createElement("div");
           titulo.className = "dia";
           titulo.innerText = diaObj.data;
           container.appendChild(titulo);
 
-          // 4.2) Para cada bloco naquele dia
+          // Para cada bloco desse dia:
           diaObj.blocos.forEach(bloco => {
+            // Se for o dia atual, só mostra blocos cujo início >= hora atual
+            if (diaObj.data === hoje && bloco.inicio < horaAgora) {
+              return; // pular bloco já passado
+            }
+            // Caso contrário (dia futuro ou bloco ainda não passou), exibe:
             const div = document.createElement("div");
-            // usa “ocupado” ou “disponível” como classe para definir a cor da borda
             div.className = "slot " + bloco.status;
-
             div.innerHTML = `
               <div class="label">${bloco.inicio} – ${bloco.fim}</div>
               <div class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</div>
@@ -142,20 +151,19 @@
           });
         });
 
-        // Se não existir nenhum dia futuro/agenda vazia, mostra feedback:
-        if (diasFuturos.length === 0) {
-          container.innerHTML = "<p style='text-align:center;margin-top:20px;'>Sem dados de disponibilidade para os próximos dias.</p>";
+        // Se, após esse filtro, não restar nenhum bloco:
+        const naoTemNada = !container.querySelector(".slot");
+        if (naoTemNada) {
+          container.innerHTML = "<p style='text-align:center;margin-top:20px;'>Sem disponibilidade atual.</p>";
         }
       } catch (e) {
-        // Exibe erro no parágrafo #erro
         document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
         console.error("Erro no carregarAgenda():", e);
       }
     }
 
-    // 5) Carrega a agenda logo que a página abre
+    // Carrega a agenda assim que a página abre
     carregarAgenda();
   </script>
 </body>
 </html>
-
