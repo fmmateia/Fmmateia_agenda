@@ -1,28 +1,109 @@
-<script>
-  async function carregarAgenda() {
-    const res = await fetch("https://fmmateia-agenda.vercel.app/api/agenda");
-    const dados = await res.json();
-    const container = document.getElementById("agenda");
-    container.innerHTML = "";
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📅 Disponibilidade do Fábio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      color: #333;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #0070f3;
+    }
+    .dia {
+      margin-top: 20px;
+    }
+    .slot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 10px 15px;
+      margin: 6px 0;
+      border-left: 6px solid;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .ocupado {
+      border-color: #ff4d4f;
+    }
+    .disponível {
+      border-color: #52c41a;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .status {
+      text-transform: uppercase;
+      font-size: 0.9em;
+    }
+    #erro {
+      color: red;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📅 Disponibilidade do Fábio</h1>
 
-    dados.forEach(dia => {
-      const header = document.createElement("h3");
-      header.className = "dia";
-      header.textContent = dia.data;
-      container.appendChild(header);
+  <!-- 1) ESTE DIV TEM DE EXISTIR, para o JavaScript inserir os blocos de horários -->
+  <div id="agenda"></div>
 
-      dia.blocos.forEach(bloco => {
-        const div = document.createElement("div");
-        div.className = "slot " + bloco.status;
-        div.innerHTML = `
-          <span class="label">${bloco.inicio} – ${bloco.fim}</span>
-          <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
-        `;
-        container.appendChild(div);
-      });
-    });
-  }
+  <!-- 2) Em caso de falha, mostramos mensagem aqui -->
+  <p id="erro"></p>
 
-  carregarAgenda();
-</script>
+  <!-- 3) O SCRIPT fica aqui em baixo, depois do <div id="agenda">  -->
+  <script>
+    async function carregarAgenda() {
+      try {
+        // 3.1) Fetch via GET para a sua API
+        const res = await fetch("/api/agenda"); 
+        if (!res.ok) {
+          throw new Error("API retornou " + res.status);
+        }
+        const dados = await res.json();
+
+        // 3.2) Agora que temos o JSON, buscamos o div “agenda”
+        const container = document.getElementById("agenda");
+        container.innerHTML = ""; // limpa o conteúdo anterior
+
+        // 3.3) Para cada dia que a API devolveu, criamos um <h3> e depois todos os blocos
+        dados.forEach(dia => {
+          // Título do dia
+          const header = document.createElement("h3");
+          header.className = "dia";
+          header.textContent = dia.data;
+          container.appendChild(header);
+
+          // Para cada bloco de 1h
+          dia.blocos.forEach(bloco => {
+            const div = document.createElement("div");
+            div.className = "slot " + bloco.status;
+            div.innerHTML = `
+              <span class="label">${bloco.inicio} – ${bloco.fim}</span>
+              <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
+            `;
+            container.appendChild(div);
+          });
+        });
+      } catch (err) {
+        // Se der erro em qualquer fase (rede, JSON, etc.), exibimos mensagem
+        document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
+        console.error("Erro no carregarAgenda():", err);
+      }
+    }
+
+    // 4) Chamamos a função depois de tudo definido
+    carregarAgenda();
+  </script>
+</body>
+</html>
 
