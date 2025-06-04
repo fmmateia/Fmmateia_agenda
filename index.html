@@ -1,112 +1,217 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📅 Disponibilidade do Fábio</title>
+
+  <!-- Google Font opcional (sem CDN extra) -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  </style>
+
+  <style>
+    /* -----------------------
+       VARIÁVEIS GLOBAIS
+    ----------------------- */
     :root {
-      --bg: #f4f6f8;
-      --card: #fff;
-      --text: #222;
-      --accent: #0070f3;
-      --busy: #ff4d4f;
-      --free: #52c41a;
+      --cor-bg: #f4f6f8;
+      --cor-card: #ffffff;
+      --cor-texto: #333333;
+      --cor-accent: #0055cc;      /* Azul mais escuro */
+      --cor-accent-light: #0070f3; /* Azul principal */
+      --cor-ocupado: #ff4d4f;
+      --cor-disponivel: #52c41a;
+      --sombra-card: rgba(0, 0, 0, 0.08);
     }
+
+    /* Modo escuro */
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #121212;
-        --card: #1e1e1e;
-        --text: #e4e4e4;
-        --accent: #3ea6ff;
-        --busy: #ff7875;
-        --free: #95de64;
+        --cor-bg: #121212;
+        --cor-card: #1e1e1e;
+        --cor-texto: #e4e4e4;
+        --cor-accent: #3ea6ff;
+        --cor-ocupado: #ff7875;
+        --cor-disponivel: #95de64;
+        --sombra-card: rgba(0, 0, 0, 0.4);
       }
     }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+
+    /* -----------------------
+       RESET / BASE
+    ----------------------- */
+    * {
       margin: 0;
-      padding: 20px;
-      max-width: 480px;
-      margin: auto;
+      padding: 0;
+      box-sizing: border-box;
     }
-    h1 {
+    html {
+      font-family: 'Inter', sans-serif;
+      background: var(--cor-bg);
+      color: var(--cor-texto);
+      scroll-behavior: smooth;
+    }
+    body {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1, h2, h3 {
+      font-weight: 700;
+      color: var(--cor-accent);
+    }
+    a {
+      color: var(--cor-accent-light);
+      text-decoration: none;
+    }
+
+    /* -----------------------
+       CABEÇALHO FIXO
+    ----------------------- */
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--cor-card);
+      z-index: 100;
+      box-shadow: 0 2px 4px var(--sombra-card);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+    }
+    header h1 {
+      font-size: 24px;
       text-align: center;
-      color: var(--accent);
-      margin-bottom: 20px;
+      margin-bottom: 8px;
     }
     #buttons {
-      text-align: center;
-      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
     #buttons button {
-      display: inline-block;
-      margin: 0 8px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: var(--accent);
-      color: white;
+      background: var(--cor-accent-light);
       border: none;
       border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      padding: 8px 16px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
     }
-    .dia {
-      font-weight: bold;
-      margin-top: 25px;
+    #buttons button:hover {
+      background: var(--cor-accent);
+    }
+
+    /* -----------------------
+       SEÇÃO DE AGENDA
+    ----------------------- */
+    #agenda {
+      margin-top: 8px;
+    }
+    .dia-card {
+      background: var(--cor-card);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px var(--sombra-card);
+      overflow: hidden;
+    }
+    .dia-header {
       font-size: 18px;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 5px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
     }
+
+    /* GRID PARA OS SLOTS */
+    .blocos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+    }
+    @media (max-width: 480px) {
+      .blocos-grid {
+        grid-template-columns: 1fr; /* 1 coluna em telas pequenas */
+      }
+    }
+
     .slot {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--card);
-      padding: 12px;
-      margin-top: 10px;
+      background: var(--cor-bg);
+      padding: 10px 12px;
+      border-radius: 6px;
       border-left: 6px solid;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
       cursor: default;
     }
-    .ocupado { border-color: var(--busy); }
-    .disponível { border-color: var(--free); }
-    .label { font-weight: 500; }
-    .status { font-weight: bold; text-transform: uppercase; }
+    .slot:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px var(--sombra-card);
+    }
+    .ocupado {
+      border-color: var(--cor-ocupado);
+    }
+    .disponível {
+      border-color: var(--cor-disponivel);
+      cursor: pointer;
+    }
+    .label {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .status {
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    /* MENSAGEM DE ERRO */
     #erro {
-      color: red;
+      color: var(--cor-ocupado);
       text-align: center;
       margin-top: 20px;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <h1>📅 Disponibilidade do Fábio</h1>
+  <!-- Cabeçalho fixo com título e botões -->
+  <header>
+    <h1>📅 Disponibilidade do Fábio</h1>
+    <div id="buttons">
+      <button id="atualizar" onclick="carregarAgenda()">
+        🔄 Atualizar
+      </button>
+      <button id="exportar" onclick="window.print()">
+        🖨️ Exportar PDF
+      </button>
+    </div>
+  </header>
 
-  <div id="buttons">
-    <button id="atualizar" onclick="carregarAgenda()">🔄 Atualizar</button>
-    <button id="exportar" onclick="window.print()">🖨️ Exportar PDF</button>
-  </div>
-
-  <!-- Aqui o JavaScript irá injetar a lista de dias e blocos -->
+  <!-- Contêiner principal onde os dias e blocos serão injetados -->
   <div id="agenda"></div>
   <p id="erro"></p>
 
   <script>
-    // Retorna “YYYY-MM-DD” do dia atual
+    // Retorna “YYYY-MM-DD”
     function hojeStr() {
       const hj = new Date();
       return hj.toISOString().split("T")[0];
     }
-
-    // Retorna a hora atual no formato “HH:MM” (zero-padded)
+    // Retorna “HH:MM” zero-padded
     function horaAtualStr() {
       const hj = new Date();
-      const h = String(hj.getHours()).padStart(2, "0");
-      const m = String(hj.getMinutes()).padStart(2, "0");
-      return `${h}:${m}`;
+      const horas = String(hj.getHours()).padStart(2, "0");
+      const mins = String(hj.getMinutes()).padStart(2, "0");
+      return `${horas}:${mins}`;
     }
 
     async function carregarAgenda() {
@@ -116,53 +221,80 @@
           throw new Error("API retornou " + res.status);
         }
         const dados = await res.json();
-
         const container = document.getElementById("agenda");
-        container.innerHTML = "";
+        container.innerHTML = "";  // limpa
         document.getElementById("erro").innerText = "";
 
         const hoje = hojeStr();
         const horaAgora = horaAtualStr();
 
-        // Filtra apenas dias >= hoje
-        const diasFuturos = dados.filter(diaObj => diaObj.data >= hoje);
+        // Filtra dias a partir de hoje
+        const diasFuturos = dados.filter(d => d.data >= hoje);
 
+        // Para cada dia, criamos um card com header e grid de blocos
         diasFuturos.forEach(diaObj => {
-          // Cria e adiciona o cabeçalho do dia (ex.: “2025-06-04”)
-          const titulo = document.createElement("div");
-          titulo.className = "dia";
-          titulo.innerText = diaObj.data;
-          container.appendChild(titulo);
+          // Card do dia
+          const diaCard = document.createElement("div");
+          diaCard.className = "dia-card";
 
-          // Para cada bloco desse dia:
+          // Header do dia
+          const diaHeader = document.createElement("div");
+          diaHeader.className = "dia-header";
+          diaHeader.innerText = diaObj.data;
+          diaCard.appendChild(diaHeader);
+
+          // Grid de blocos (2 colunas em desktops, 1 em mobile)
+          const grid = document.createElement("div");
+          grid.className = "blocos-grid";
+
           diaObj.blocos.forEach(bloco => {
-            // Se for o dia atual, só mostra blocos cujo início >= hora atual
+            // Se for o dia de hoje, só mostra blocos cujo início >= hora atual
             if (diaObj.data === hoje && bloco.inicio < horaAgora) {
-              return; // pular bloco já passado
+              return;
             }
-            // Caso contrário (dia futuro ou bloco ainda não passou), exibe:
-            const div = document.createElement("div");
-            div.className = "slot " + bloco.status;
-            div.innerHTML = `
-              <div class="label">${bloco.inicio} – ${bloco.fim}</div>
-              <div class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</div>
+
+            const divSlot = document.createElement("div");
+            divSlot.className = "slot " + bloco.status;
+            divSlot.innerHTML = `
+              <span class="label">${bloco.inicio} – ${bloco.fim}</span>
+              <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
             `;
-            container.appendChild(div);
+
+            // Se quiseres clicar para alguma ação quando disponível, podes adicionar aqui:
+            // if (bloco.status === "disponível") {
+            //   divSlot.onclick = () => { /* fazer algo */ };
+            // }
+
+            grid.appendChild(divSlot);
           });
+
+          // Se não houver nenhum bloco (ex.: todos passaram), exibe mensagem no card
+          if (grid.childElementCount === 0) {
+            const vazio = document.createElement("p");
+            vazio.style.textAlign = "center";
+            vazio.style.marginTop = "12px";
+            vazio.style.color = "#555";
+            vazio.innerText = "Sem horários disponíveis hoje.";
+            diaCard.appendChild(vazio);
+          } else {
+            diaCard.appendChild(grid);
+          }
+
+          container.appendChild(diaCard);
         });
 
-        // Se, após esse filtro, não restar nenhum bloco:
-        const naoTemNada = !container.querySelector(".slot");
-        if (naoTemNada) {
-          container.innerHTML = "<p style='text-align:center;margin-top:20px;'>Sem disponibilidade atual.</p>";
+        // Se não houver nenhum dia futuro, mostrar mensagem geral
+        if (diasFuturos.length === 0) {
+          container.innerHTML = "<p style='text-align:center;color:#777;margin-top:20px;'>Sem dados de disponibilidade para os próximos dias.</p>";
         }
+
       } catch (e) {
         document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
         console.error("Erro no carregarAgenda():", e);
       }
     }
 
-    // Carrega a agenda assim que a página abre
+    // Carrega a agenda ao abrir página
     carregarAgenda();
   </script>
 </body>
