@@ -2,8 +2,8 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📅 Disponibilidade - Fábio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📅 Disponibilidade do Fábio</title>
   <style>
     :root {
       --bg: #f4f6f8;
@@ -37,6 +37,21 @@
       color: var(--accent);
       margin-bottom: 20px;
     }
+    #buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #buttons button {
+      display: inline-block;
+      margin: 0 8px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
     .dia {
       font-weight: bold;
       margin-top: 25px;
@@ -54,107 +69,91 @@
       border-left: 6px solid;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      cursor: pointer;
+      cursor: default;
     }
-    .busy { border-color: var(--busy); cursor: default; }
-    .free { border-color: var(--free); }
+    .ocupado { border-color: var(--busy); }
+    .disponível { border-color: var(--free); }
     .label { font-weight: 500; }
     .status { font-weight: bold; text-transform: uppercase; }
-    #erro { color: red; text-align: center; }
-    #atualizar, #exportar {
-      display: inline-block;
-      margin: 10px 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    #buttons {
+    #erro {
+      color: red;
       text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <h1>📅 Disponibilidade do Fábio</h1>
+
   <div id="buttons">
     <button id="atualizar" onclick="carregarAgenda()">🔄 Atualizar</button>
     <button id="exportar" onclick="window.print()">🖨️ Exportar PDF</button>
   </div>
+
+  <!-- Aqui o JavaScript irá injetar a lista de dias e blocos -->
   <div id="agenda"></div>
   <p id="erro"></p>
 
   <script>
+    // Retorna a string “YYYY-MM-DD” do dia atual
     function hojeStr() {
-      const hoje = new Date();
-      return hoje.toISOString().split("T")[0];
+      const h = new Date();
+      return h.toISOString().split("T")[0];
     }
 
     async function carregarAgenda() {
       try {
-        const res = await fetch("https://fmmateia-agenda.vercel.app/api/agenda", { method: "POST" });
+        // 1) Chama a API via GET (rota relativa) – CORS já está configurado no backend
+        const res = await fetch("/api/agenda");
+        if (!res.ok) {
+          throw new Error("API retornou " + res.status + " " + res.statusText);
+        }
         const dados = await res.json();
-        const hoje = hojeStr();
 
+        // 2) Pega o <div id="agenda"> e limpa
         const container = document.getElementById("agenda");
         container.innerHTML = "";
+        document.getElementById("erro").innerText = "";
 
-        const dias = {};
-        dados.filter(item => item.data >= hoje).forEach(item => {
-          if (!dias[item.data]) dias[item.data] = [];
-          dias[item.data].push(item);
-        });
+        const hoje = hojeStr();
 
-        Object.keys(dias).forEach(data => {
+        // 3) Filtra somente dias >= hoje (caso não queiras mostrar datas passadas)
+        const diasFuturos = dados.filter(diaObj => diaObj.data >= hoje);
+
+        // 4) Para cada dia, cria o título e depois os blocos
+        diasFuturos.forEach(diaObj => {
+          // 4.1) Título do dia
           const titulo = document.createElement("div");
           titulo.className = "dia";
-          titulo.innerText = data;
+          titulo.innerText = diaObj.data;
           container.appendChild(titulo);
 
-          dias[data].forEach(item => {
+          // 4.2) Para cada bloco naquele dia
+          diaObj.blocos.forEach(bloco => {
             const div = document.createElement("div");
-            div.className = `slot ${item.status === 'ocupado' ? 'busy' : 'free'}`;
+            // usa “ocupado” ou “disponível” como classe para definir a cor da borda
+            div.className = "slot " + bloco.status;
+
             div.innerHTML = `
-              <div class="label">${item.inicio} – ${item.fim}</div>
-              <div class="status">${item.status === 'ocupado' ? 'OCUPADO' : 'DISPONÍVEL'}</div>
+              <div class="label">${bloco.inicio} – ${bloco.fim}</div>
+              <div class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</div>
             `;
-            if (item.status === 'livre') {
-              div.onclick = () => marcarEvento(item);
-            }
             container.appendChild(div);
           });
         });
+
+        // Se não existir nenhum dia futuro/agenda vazia, mostra feedback:
+        if (diasFuturos.length === 0) {
+          container.innerHTML = "<p style='text-align:center;margin-top:20px;'>Sem dados de disponibilidade para os próximos dias.</p>";
+        }
       } catch (e) {
+        // Exibe erro no parágrafo #erro
         document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
+        console.error("Erro no carregarAgenda():", e);
       }
     }
 
-    async function marcarEvento(item) {
-      const confirmado = confirm(`Queres marcar um evento para ${item.data} das ${item.inicio} às ${item.fim}?`);
-      if (!confirmado) return;
-
-      const evento = {
-        titulo: "Evento marcado via app",
-        data_inicio: item.data,
-        hora_inicio: item.inicio,
-        hora_fim: item.fim
-      };
-
-      try {
-        await fetch("https://agenda-fabio-final.vercel.app/api", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(evento)
-        });
-        alert("✅ Evento marcado com sucesso!");
-        carregarAgenda();
-      } catch (e) {
-        alert("❌ Erro ao marcar evento.");
-      }
-    }
-
+    // 5) Carrega a agenda logo que a página abre
     carregarAgenda();
   </script>
 </body>
