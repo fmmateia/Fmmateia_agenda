@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📅 Disponibilidade do Fábio</title>
 
-  <!-- Google Font opcional (sem CDN extra) -->
+  <!-- Fonte Inter para um look mais moderno -->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
   </style>
@@ -18,14 +18,13 @@
       --cor-bg: #f4f6f8;
       --cor-card: #ffffff;
       --cor-texto: #333333;
-      --cor-accent: #0055cc;      /* Azul mais escuro */
-      --cor-accent-light: #0070f3; /* Azul principal */
+      --cor-accent: #0055cc;
+      --cor-accent-light: #0070f3;
       --cor-ocupado: #ff4d4f;
       --cor-disponivel: #52c41a;
       --sombra-card: rgba(0, 0, 0, 0.08);
     }
 
-    /* Modo escuro */
     @media (prefers-color-scheme: dark) {
       :root {
         --cor-bg: #121212;
@@ -137,7 +136,7 @@
     }
     @media (max-width: 480px) {
       .blocos-grid {
-        grid-template-columns: 1fr; /* 1 coluna em telas pequenas */
+        grid-template-columns: 1fr;
       }
     }
 
@@ -150,7 +149,6 @@
       border-radius: 6px;
       border-left: 6px solid;
       transition: transform 0.1s;
-      cursor: default;
     }
     .slot:hover {
       transform: translateY(-2px);
@@ -158,6 +156,7 @@
     }
     .ocupado {
       border-color: var(--cor-ocupado);
+      cursor: default;
     }
     .disponível {
       border-color: var(--cor-disponivel);
@@ -201,7 +200,7 @@
   <p id="erro"></p>
 
   <script>
-    // Retorna “YYYY-MM-DD”
+    // Retorna “YYYY-MM-DD” do dia atual
     function hojeStr() {
       const hj = new Date();
       return hj.toISOString().split("T")[0];
@@ -260,20 +259,20 @@
               <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
             `;
 
-            // Se quiseres clicar para alguma ação quando disponível, podes adicionar aqui:
-            // if (bloco.status === "disponível") {
-            //   divSlot.onclick = () => { /* fazer algo */ };
-            // }
+            // Se o slot estiver “disponível”, ao clicar chama marcarEvento()
+            if (bloco.status === "disponível") {
+              divSlot.onclick = () => marcarEvento(diaObj.data, bloco.inicio, bloco.fim);
+            }
 
             grid.appendChild(divSlot);
           });
 
-          // Se não houver nenhum bloco (ex.: todos passaram), exibe mensagem no card
+          // Se não houver nenhum bloco (ex.: todos já passaram), exibe mensagem
           if (grid.childElementCount === 0) {
             const vazio = document.createElement("p");
             vazio.style.textAlign = "center";
             vazio.style.marginTop = "12px";
-            vazio.style.color = "#555";
+            vazio.style.color = "#777";
             vazio.innerText = "Sem horários disponíveis hoje.";
             diaCard.appendChild(vazio);
           } else {
@@ -294,7 +293,35 @@
       }
     }
 
-    // Carrega a agenda ao abrir página
+    // Pergunta ao utilizador e faz POST para /api/create-event
+    async function marcarEvento(data, inicio, fim) {
+      const confirmado = confirm(`Queres marcar um evento para ${data} das ${inicio} às ${fim}?`);
+      if (!confirmado) return;
+
+      const evento = {
+        titulo: "Marcado via app",  // personaliza se quiser
+        data_inicio: data,
+        hora_inicio: inicio,
+        hora_fim: fim
+      };
+
+      try {
+        const res = await fetch("/api/create-event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(evento)
+        });
+        if (!res.ok) throw new Error("Falha: " + res.status);
+
+        alert("✅ Evento marcado com sucesso!");
+        carregarAgenda(); // Atualiza a lista para mostrar esse bloco como “ocupado”
+      } catch (err) {
+        alert("❌ Erro ao marcar evento.");
+        console.error("Erro no marcarEvento():", err);
+      }
+    }
+
+    // Carrega a agenda assim que a página abre
     carregarAgenda();
   </script>
 </body>
