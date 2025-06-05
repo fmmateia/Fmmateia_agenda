@@ -5,299 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📅 Disponibilidade do Fábio</title>
 
-  <!-- Fonte Inter para um look mais moderno -->
+  <!-- Aqui dentro do <head>, cole o CSS do toast -->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-    :root {
-      --cor-bg: #f4f6f8;
-      --cor-card: #ffffff;
-      --cor-texto: #333333;
-      --cor-accent: #0055cc;
-      --cor-accent-light: #0070f3;
-      --cor-ocupado: #ff4d4f;
-      --cor-disponivel: #52c41a;
-      --sombra-card: rgba(0, 0, 0, 0.08);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --cor-bg: #121212;
-        --cor-card: #1e1e1e;
-        --cor-texto: #e4e4e4;
-        --cor-accent: #3ea6ff;
-        --cor-ocupado: #ff7875;
-        --cor-disponivel: #95de64;
-        --sombra-card: rgba(0, 0, 0, 0.4);
-      }
-    }
-
-    /* Reset + Base */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html {
-      font-family: 'Inter', sans-serif;
-      background: var(--cor-bg);
-      color: var(--cor-texto);
-      scroll-behavior: smooth;
-    }
-    body {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-    h1, h2, h3 {
-      font-weight: 700;
-      color: var(--cor-accent);
-    }
-    a {
-      color: var(--cor-accent-light);
-      text-decoration: none;
-    }
-
-    /* Cabeçalho fixo */
-    header {
-      position: sticky;
-      top: 0;
-      background: var(--cor-card);
-      z-index: 100;
-      box-shadow: 0 2px 4px var(--sombra-card);
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      border-radius: 8px;
-    }
-    header h1 {
-      font-size: 24px;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    #buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    #buttons button {
+    /* Estilo básico para um toast-notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
       background: var(--cor-accent-light);
-      border: none;
-      border-radius: 6px;
       color: white;
-      font-weight: 600;
-      padding: 8px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.2s;
-    }
-    #buttons button:hover {
-      background: var(--cor-accent);
-    }
-
-    /* Área da agenda */
-    #agenda {
-      margin-top: 8px;
-    }
-    .dia-card {
-      background: var(--cor-card);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px var(--sombra-card);
-      overflow: hidden;
-    }
-    .dia-header {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 6px;
-    }
-    .blocos-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
-    }
-    @media (max-width: 480px) {
-      .blocos-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .slot {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--cor-bg);
-      padding: 10px 12px;
+      padding: 12px 20px;
       border-radius: 6px;
-      border-left: 6px solid;
-      transition: transform 0.1s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 1000;
+      pointer-events: none;
     }
-    .slot:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px var(--sombra-card);
-    }
-    .ocupado {
-      border-color: var(--cor-ocupado);
-      cursor: default;
-    }
-    .disponível {
-      border-color: var(--cor-disponivel);
-      cursor: pointer;
-    }
-    .label {
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .status {
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-
-    /* Mensagem de erro */
-    #erro {
-      color: var(--cor-ocupado);
-      text-align: center;
-      margin-top: 20px;
-      font-weight: 600;
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
+
+  <!-- Demais estilos e imports aqui… -->
 </head>
-
 <body>
-  <!-- Cabeçalho fixo com título e botões -->
-  <header>
-    <h1>📅 Disponibilidade do Fábio</h1>
-    <div id="buttons">
-      <button id="atualizar" onclick="carregarAgenda()">🔄 Atualizar</button>
-      <button id="exportar" onclick="window.print()">🖨️ Exportar PDF</button>
-    </div>
-  </header>
-
-  <!-- CONTÊINER para injeção dos dias e blocos -->
-  <div id="agenda"></div>
-
-  <!-- PARÁGRAFO para exibir erros -->
-  <p id="erro"></p>
-
-  <!-- JAVASCRIPT: carrega agenda e permite marcar evento -->
-  <script>
-    function hojeStr() {
-      const hj = new Date();
-      return hj.toISOString().split("T")[0];
-    }
-    function horaAtualStr() {
-      const hj = new Date();
-      const horas = String(hj.getHours()).padStart(2, "0");
-      const mins = String(hj.getMinutes()).padStart(2, "0");
-      return `${horas}:${mins}`;
-    }
-
-    async function carregarAgenda() {
-      try {
-        const res = await fetch("/api/agenda");
-        if (!res.ok) throw new Error("API retornou " + res.status);
-        const dados = await res.json();
-
-        const container = document.getElementById("agenda");
-        container.innerHTML = "";
-        document.getElementById("erro").innerText = "";
-
-        const hoje = hojeStr();
-        const horaAgora = horaAtualStr();
-        const diasFuturos = dados.filter(d => d.data >= hoje);
-
-        diasFuturos.forEach(diaObj => {
-          const diaCard = document.createElement("div");
-          diaCard.className = "dia-card";
-
-          const diaHeader = document.createElement("div");
-          diaHeader.className = "dia-header";
-          diaHeader.innerText = diaObj.data;
-          diaCard.appendChild(diaHeader);
-
-          const grid = document.createElement("div");
-          grid.className = "blocos-grid";
-
-          diaObj.blocos.forEach(bloco => {
-            if (diaObj.data === hoje && bloco.inicio < horaAgora) return;
-
-            const divSlot = document.createElement("div");
-            divSlot.className = "slot " + bloco.status;
-            divSlot.innerHTML = `
-              <span class="label">${bloco.inicio} – ${bloco.fim}</span>
-              <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
-            `;
-            if (bloco.status === "disponível") {
-              divSlot.onclick = () => marcarEvento(diaObj.data, bloco.inicio, bloco.fim);
-            }
-            grid.appendChild(divSlot);
-          });
-
-          if (grid.childElementCount === 0) {
-            const vazio = document.createElement("p");
-            vazio.style.textAlign = "center";
-            vazio.style.marginTop = "12px";
-            vazio.style.color = "#777";
-            vazio.innerText = "Sem horários disponíveis hoje.";
-            diaCard.appendChild(vazio);
-          } else {
-            diaCard.appendChild(grid);
-          }
-
-          container.appendChild(diaCard);
-        });
-
-        if (diasFuturos.length === 0) {
-          container.innerHTML = "<p style='text-align:center;color:#777;margin-top:20px;'>Sem dados de disponibilidade para os próximos dias.</p>";
-        }
-      } catch (e) {
-        document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
-        console.error("Erro no carregarAgenda():", e);
-      }
-    }
-
-    async function marcarEvento(data, inicio, fim) {
-      const confirmado = confirm(`Queres marcar um evento para ${data} das ${inicio} às ${fim}?`);
-      if (!confirmado) return;
-
-      const evento = {
-        titulo: "Marcado via app",
-        data_inicio: data,
-        hora_inicio: inicio,
-        hora_fim: fim
-      };
-
-      try {
-        const res = await fetch("/api/create-event", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(evento)
-        });
-
-        if (!res.ok) {
-          const erroJson = await res.json().catch(() => null);
-          if (erroJson && (erroJson.error || erroJson.details)) {
-            throw new Error(`Status ${res.status}:
-${erroJson.error || ""}${erroJson.details ? "\nDetalhes: " + erroJson.details : ""}`);
-          }
-          const textoErro = await res.text();
-          throw new Error(`Status ${res.status}: ${textoErro}`);
-        }
-
-        alert("✅ Evento marcado com sucesso!");
-        carregarAgenda();
-      } catch (err) {
-        alert("❌ Erro ao marcar evento:\n" + err.message);
-        console.error("Erro no marcarEvento():", err);
-      }
-    }
-
-    // Executa logo que a página abre
-    carregarAgenda();
-  </script>
+  <!-- Corpo do index.html -->
+  …
+  <!-- No final do <body>, lembre-se de adicionar: -->
+  <div id="toast" class="toast"></div>
+  <!-- e o <script> com a função showToast() -->
 </body>
 </html>
