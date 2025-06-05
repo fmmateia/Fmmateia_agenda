@@ -424,7 +424,7 @@
       document.getElementById("slots-container").style.display = "none";
     }
 
-    // ===== Exibe horários ao clicar em um dia livre (simulação) =====
+    // ===== Exibe horários ao clicar em um dia livre =====
     function mostrarSlots(dateStr) {
       const slotsContainer = document.getElementById("slots-container");
       const slotsList = document.getElementById("slots-list");
@@ -438,7 +438,7 @@
       // Limpa a lista atual
       slotsList.innerHTML = "";
 
-      // Gera cada horário fixo com botão “Agendar” (sem chamada real ao backend)
+      // Gera cada horário fixo com botão “Agendar” que chama o backend
       horariosFixos.forEach(horario => {
         const slotEl = document.createElement('div');
         slotEl.className = 'slot';
@@ -448,10 +448,36 @@
         label.innerText = horario;
         slotEl.appendChild(label);
 
-        // Botão “Agendar” que simula marcação local
+        // Botão “Agendar” que faz POST para /api/agendar
         const btn = document.createElement('button');
         btn.innerText = 'Agendar';
-        btn.onclick = () => agendarHorario(dateStr, horario);
+        btn.onclick = () => {
+          const agendamento = { data: dateStr, horario };
+          fetch('/api/agendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(agendamento)
+          })
+          .then(async res => {
+            if (!res.ok) {
+              const erroJson = await res.json().catch(() => null);
+              throw new Error(erroJson?.error || 'Erro ao agendar.');
+            }
+            return res.json();
+          })
+          .then(resp => {
+            if (resp.sucesso) {
+              showToast(`✅ Agendado: ${formatoBr} às ${horario}`);
+              carregarCalendario();
+            } else {
+              showToast('❌ Falha ao agendar.');
+            }
+          })
+          .catch(err => {
+            console.error('Erro no fetch /api/agendar:', err);
+            showToast('❌ Erro ao enviar agendamento.');
+          });
+        };
         slotEl.appendChild(btn);
 
         slotsList.appendChild(slotEl);
@@ -459,17 +485,6 @@
 
       slotsContainer.style.display = 'block';
       slotsContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // ===== Simula agendamento local (sem backend) =====
-    function agendarHorario(dateStr, horario) {
-      // Adiciona a data em occupiedDays para exibir como "ocupado"
-      if (!occupiedDays.includes(dateStr)) {
-        occupiedDays.push(dateStr);
-      }
-      showToast(`✅ Agendado para ${dateStr} às ${horario}`);
-      // Re-renderiza calendário para refletir ocupação
-      carregarCalendario();
     }
 
     // ===== Navegação entre meses =====
@@ -484,19 +499,17 @@
 
     // ===== Filtrar por data (input type=date) =====
     function filtrarPorData() {
-      const filtro = document.getElementById("filtroData").value; // “YYYY-MM-DD”
+      const filtro = document.getElementById("filtroData").value;
       if (!filtro) {
         return carregarCalendario();
       }
 
-      // Extrai ano e mês do filtro
       const [anoFiltro, mesFiltro] = filtro.split("-").map(item => parseInt(item, 10));
       const hoje = new Date();
       const diffMeses = (anoFiltro - hoje.getFullYear()) * 12 + (mesFiltro - (hoje.getMonth() + 1));
       monthOffset = diffMeses;
       carregarCalendario();
 
-      // Após 500ms, exibe slots do dia filtrado
       setTimeout(() => mostrarSlots(filtro), 500);
     }
 
