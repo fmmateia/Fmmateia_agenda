@@ -297,20 +297,18 @@
 
   <script>
     // ===== Variáveis globais =====
-    let occupiedDays = [];    // Array de datas “YYYY-MM-DD” que vêm do backend
-    let monthOffset = 0;      // 0 = mês atual; -1 = mês anterior; +1 = mês seguinte
-    let monthAtivo = null;    // Vai armazenar { month: X, year: Y } após carregar
+    let occupiedDays = [];
+    let monthOffset = 0;
+    let monthAtivo = null;
 
-    // Horários fixos de exemplo (pode vir de uma outra API se quiser)
     const horariosFixos = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
-    // Retorna a data de hoje no formato “YYYY-MM-DD”
+    // Retorna “YYYY-MM-DD” de hoje
     function hojeStr() {
       const hj = new Date();
       return hj.toISOString().split("T")[0];
     }
 
-    // Mostra um toast rápido
     function showToast(mensagem, duracaoMs = 3000) {
       const toastEl = document.getElementById("toast");
       toastEl.textContent = mensagem;
@@ -320,50 +318,51 @@
       }, duracaoMs);
     }
 
-    // Calcula qual mês/ano carregar com base no monthOffset
+    // Calcula mês e ano atuais baseados em monthOffset
     function calcularMesAno() {
       const data = new Date();
       data.setMonth(data.getMonth() + monthOffset);
       return { mes: data.getMonth() + 1, ano: data.getFullYear() };
     }
 
-    // ===== Carrega o calendário chamando a API (ou falha para “fallback”) =====
+    // ===== Carrega o calendário (filtro/remoto/fallback) =====
     async function carregarCalendario() {
-      // Limpa mensagem de erro
+      // 1) Calcula mês/ano e atualiza label imediatamente
+      const { mes, ano } = calcularMesAno();
+      const monthNames = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ];
+      document.getElementById("monthLabel").innerText = `${monthNames[mes - 1]} ${ano}`;
+
+      // 2) Limpa mensagem de erro
       document.getElementById("erro").innerText = "";
 
-      // 1) Descobre mês/ano que eu quero mostrar
-      const { mes, ano } = calcularMesAno();
-
-      // 2) Tenta fazer fetch para `/api/agenda?month=...&year=...`
+      // 3) Tenta obter occupiedDays do backend
       try {
-        const resposta = await fetch(`/api/agenda?month=${mes}&year=${ano}`);
-        if (!resposta.ok) throw new Error("API retornou “" + resposta.status + "”");
-
+        const resposta = await fetch(`/api/agenda?monthOffset=${monthOffset}`);
+        if (!resposta.ok) throw new Error("Status " + resposta.status);
         const dados = await resposta.json();
-        // Espera-se que o JSON seja algo como:
-        //    { occupied: [ "2025-06-04", "2025-06-10", … ] }
         occupiedDays = Array.isArray(dados.occupied) ? dados.occupied : [];
       } catch (erro) {
-        // Se der algum problema, grava no console e embarca em “fallback”:
-        console.warn("Falha ao buscar `/api/agenda`:", erro);
-        occupiedDays = []; 
-        document.getElementById("erro").innerText = "⚠️ Não foi possível carregar disponibilidade. Mostrando calendário vazio.";
+        console.warn("Falha ao buscar '/api/agenda':", erro);
+        occupiedDays = [];
+        document.getElementById("erro").innerText = "⚠️ Não foi possível carregar disponibilidade do servidor. Mostrando calendário vazio.";
       }
 
-      // 3) Guarda o mês/ano ativo (para exportar CSV mais tarde)
+      // 4) Guarda mês/ano ativo para export
       monthAtivo = { month: mes, year: ano };
 
-      // 4) Gera o HTML do calendário, passando as datas ocupadas
+      // 5) Gera o grid do calendário
       gerarGridCalendario(mes, ano, occupiedDays);
     }
 
-    // ===== Gera o grid do calendário (cabeçalhos + dias) =====
+    // ===== Gera o grid do calendário =====
     function gerarGridCalendario(mes, ano, occupied) {
       const calendarEl = document.getElementById("calendar");
       calendarEl.innerHTML = "";
 
-      // 1) Cabeçalhos de dia da semana
+      // Cabeçalhos dos dias da semana
       const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
       diasSemana.forEach(dia => {
         const th = document.createElement("div");
@@ -372,51 +371,48 @@
         calendarEl.appendChild(th);
       });
 
-      // 2) Em que dia da semana começa o 1º do mês? (0=Dom, 1=Seg,…6=Sáb)
+      // Determina o primeiro dia da semana do mês e total de dias
       const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay();
-      // 3) Quantos dias tem esse mês?
       const totalDiasMes = new Date(ano, mes, 0).getDate();
 
-      // 4) Preenche “células vazias” até o primeiro dia efetivo
+      // Preenche células vazias antes do primeiro dia
       for (let i = 0; i < primeiroDiaSemana; i++) {
         const vazio = document.createElement("div");
         vazio.className = "day-cell disabled";
         calendarEl.appendChild(vazio);
       }
 
-      // 5) Cria cada dia do mês
+      // Preenche cada dia do mês
       const hoje = hojeStr();
       for (let dia = 1; dia <= totalDiasMes; dia++) {
         const dateStr = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
         const cell = document.createElement("div");
         cell.className = "day-cell";
 
-        // Marca “hoje” se for igual
-        if (dateStr === hoje) {
-          cell.classList.add("hoje");
-        }
+        // Marca “hoje” se for a data atual
+        if (dateStr === hoje) cell.classList.add("hoje");
 
-        // Se estiver em occupied[], é “ocupado”
+        // Se data estiver em occupiedDays, marca como ocupado
         if (occupied.includes(dateStr)) {
           cell.classList.add("ocupado");
         }
-        // Senão, se for data futura (>= hoje), é “livre” e clicável
+        // Senão, se data futura (>= hoje), marca livre e torna clicável
         else if (dateStr >= hoje) {
           cell.classList.add("livre");
           cell.onclick = () => mostrarSlots(dateStr);
         }
-        // Qualquer data anterior a hoje é “disabled”
+        // Qualquer data passada fica desabilitada
         else {
           cell.classList.add("disabled");
         }
 
-        // Número do dia (canto superior esquerdo)
+        // Número do dia no canto superior esquerdo
         const numSpan = document.createElement("span");
         numSpan.className = "day-number";
         numSpan.innerText = dia;
         cell.appendChild(numSpan);
 
-        // “Dot” (indicador de status)
+        // Pontinho indicador no canto inferior direito
         const dot = document.createElement("span");
         dot.className = "dot";
         cell.appendChild(dot);
@@ -424,89 +420,59 @@
         calendarEl.appendChild(cell);
       }
 
-      // 6) Atualiza o mês/ano no header
-      const monthNames = [
-        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-      ];
-      document.getElementById("monthLabel").innerText = `${monthNames[mes - 1]} ${ano}`;
-
-      // 7) Esconde a lista de slots ao trocar de mês
+      // Esconde a lista de horários ao renderizar um novo mês
       document.getElementById("slots-container").style.display = "none";
     }
 
-    // ===== Quando clico num dia “livre”, exibe os horários =====
+    // ===== Exibe horários ao clicar em um dia livre (simulação) =====
     function mostrarSlots(dateStr) {
       const slotsContainer = document.getElementById("slots-container");
       const slotsList = document.getElementById("slots-list");
       const slotsData = document.getElementById("slots-data");
 
-      // Transforma “YYYY-MM-DD” para “DD/MM/YYYY”
+      // Formata data YYYY-MM-DD para DD/MM/YYYY
       const [YYYY, MM, DD] = dateStr.split("-");
       const formatoBr = `${String(DD).padStart(2, "0")}/${String(MM).padStart(2, "0")}/${YYYY}`;
       slotsData.innerText = formatoBr;
 
-      // Limpa lista anterior
+      // Limpa a lista atual
       slotsList.innerHTML = "";
 
-      // Para cada horário fixo, cria um “slot”
+      // Gera cada horário fixo com botão “Agendar” (sem chamada real ao backend)
       horariosFixos.forEach(horario => {
-        const slotEl = document.createElement("div");
-        slotEl.className = "slot";
+        const slotEl = document.createElement('div');
+        slotEl.className = 'slot';
 
-        // Label do horário
-        const label = document.createElement("span");
+        // Label de horário
+        const label = document.createElement('span');
         label.innerText = horario;
         slotEl.appendChild(label);
 
-        // Botão “Agendar”
-        const btn = document.createElement("button");
-        btn.innerText = "Agendar";
+        // Botão “Agendar” que simula marcação local
+        const btn = document.createElement('button');
+        btn.innerText = 'Agendar';
         btn.onclick = () => agendarHorario(dateStr, horario);
         slotEl.appendChild(btn);
 
         slotsList.appendChild(slotEl);
       });
 
-      slotsContainer.style.display = "block";
-      // Rola suavemente até os horários
-      slotsContainer.scrollIntoView({ behavior: "smooth" });
+      slotsContainer.style.display = 'block';
+      slotsContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ===== Envia requisição ao backend para “/api/agendar” =====
+    // ===== Simula agendamento local (sem backend) =====
     function agendarHorario(dateStr, horario) {
-      // Monta o objeto de agendamento
-      const agendamento = { data: dateStr, horario };
-
-      fetch("/api/agendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(agendamento)
-      })
-      .then(async (res) => {
-        if (!res.ok) {
-          // Se a resposta não for OK, pega mensagem de erro se existir
-          const erroJson = await res.json().catch(() => null);
-          throw new Error(erroJson?.error || "Erro no servidor");
-        }
-        return res.json();
-      })
-      .then(resp => {
-        if (resp.sucesso) {
-          showToast(`✅ Agendado para ${dateStr} às ${horario}`);
-          // Recarrega o mês para atualizar cor de dia “ocupado”
-          carregarCalendario();
-        } else {
-          showToast("❌ Não foi possível agendar.");
-        }
-      })
-      .catch(err => {
-        console.error("Erro no agendarHorario():", err);
-        showToast("❌ Erro ao enviar agendamento.");
-      });
+      // Adiciona a data em occupiedDays para exibir como "ocupado"
+      if (!occupiedDays.includes(dateStr)) {
+        occupiedDays.push(dateStr);
+      }
+      showToast(`✅ Agendado para ${dateStr} às ${horario}`);
+      // Re-renderiza calendário para refletir ocupação
+      carregarCalendario();
     }
 
-    // ===== Navegação de meses =====
+    // ===== Navegação entre meses =====
     function aumentarMes() {
       monthOffset++;
       carregarCalendario();
@@ -516,28 +482,22 @@
       carregarCalendario();
     }
 
-    // ===== Filtrar por data (input date) =====
+    // ===== Filtrar por data (input type=date) =====
     function filtrarPorData() {
       const filtro = document.getElementById("filtroData").value; // “YYYY-MM-DD”
       if (!filtro) {
-        // Se limpar, volta a carregar o mês atual (sem filtro)
         return carregarCalendario();
       }
 
       // Extrai ano e mês do filtro
-      const [anoFiltro, mesFiltro, diaFiltro] = filtro.split("-").map(item => parseInt(item, 10));
-
-      // Calcula quantos meses de diferença há entre hoje e filtro
+      const [anoFiltro, mesFiltro] = filtro.split("-").map(item => parseInt(item, 10));
       const hoje = new Date();
       const diffMeses = (anoFiltro - hoje.getFullYear()) * 12 + (mesFiltro - (hoje.getMonth() + 1));
       monthOffset = diffMeses;
       carregarCalendario();
 
-      // Depois de 500ms (tempo que leva para recarregar o calendário), clicamos naquele dia
-      setTimeout(() => {
-        // Exibe slots somente para o dia filtrado
-        mostrarSlots(filtro);
-      }, 500);
+      // Após 500ms, exibe slots do dia filtrado
+      setTimeout(() => mostrarSlots(filtro), 500);
     }
 
     function limparFiltro() {
@@ -551,7 +511,6 @@
         showToast("Carrega o calendário primeiro.");
         return;
       }
-      // Monta cabeçalho do CSV
       let csvConteudo = "Data;Status\n";
       const totalDiasMes = new Date(monthAtivo.year, monthAtivo.month, 0).getDate();
       for (let dia = 1; dia <= totalDiasMes; dia++) {
@@ -569,7 +528,7 @@
       document.body.removeChild(link);
     }
 
-    // ===== Inicializa o calendário ao abrir a página =====
+    // ===== Inicializa calendário ao carregar a página =====
     carregarCalendario();
   </script>
 </body>
