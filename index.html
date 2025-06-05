@@ -2,608 +2,195 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📅 Disponibilidade do Fábio</title>
-
-  <!-- Fonte Inter para ter um look moderno -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda Fábio</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-    :root {
-      --cor-bg: #f4f6f8;
-      --cor-card: #ffffff;
-      --cor-texto: #333333;
-      --cor-accent: #0055cc;
-      --cor-accent-light: #0070f3;
-      --cor-ocupado: #ff4d4f;
-      --cor-disponivel: #52c41a;
-      --sombra-card: rgba(0, 0, 0, 0.08);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --cor-bg: #121212;
-        --cor-card: #1e1e1e;
-        --cor-texto: #e4e4e4;
-        --cor-accent: #3ea6ff;
-        --cor-ocupado: #ff7875;
-        --cor-disponivel: #95de64;
-        --sombra-card: rgba(0, 0, 0, 0.4);
-      }
-    }
-
-    /* Reset + Font + Background */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html {
-      font-family: 'Inter', sans-serif;
-      background: var(--cor-bg);
-      color: var(--cor-texto);
-      scroll-behavior: smooth;
-    }
     body {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-    h1, h2, h3 {
-      font-weight: 700;
-      color: var(--cor-accent);
-    }
-    a {
-      color: var(--cor-accent-light);
-      text-decoration: none;
-    }
-
-    /* Cabeçalho fixo com botões */
-    header {
-      position: sticky;
-      top: 0;
-      background: var(--cor-card);
-      z-index: 100;
-      box-shadow: 0 2px 4px var(--sombra-card);
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      border-radius: 8px;
-    }
-    header h1 {
-      font-size: 24px;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    #buttons {
+      font-family: Arial, sans-serif;
+      padding: 20px;
       display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    #buttons button {
-      background: var(--cor-accent-light);
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-weight: 600;
-      padding: 8px 16px;
-      cursor: pointer;
-      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 6px;
-      transition: background 0.2s;
     }
-    #buttons button:hover {
-      background: var(--cor-accent);
-    }
-
-    /* Filtro de data (date picker) */
-    #filtro-container {
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    #filtro-container label {
-      font-weight: 600;
-      margin-right: 6px;
-    }
-    #filtro-container input,
-    #filtro-container button {
-      margin-left: 4px;
-      margin-right: 4px;
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    #filtro-container button {
-      background: var(--cor-accent-light);
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    #filtro-container button:hover {
-      background: var(--cor-accent);
-    }
-
-    /* Área da agenda: cards por dia */
-    #agenda {
-      margin-top: 8px;
-    }
-    .dia-card {
-      background: var(--cor-card);
-      border-radius: 8px;
-      padding: 12px 16px;
+    #calendar-container {
+      width: 100%;
+      max-width: 400px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 6px var(--sombra-card);
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeInUp 0.4s forwards;
     }
-    .dia-card.hoje {
-      border: 2px solid var(--cor-accent-light);
-      background: #eef7ff;
-    }
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .dia-header {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 6px;
-    }
-    .blocos-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
-    }
-    @media (max-width: 480px) {
-      .blocos-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .slot {
+    #calendar-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--cor-bg);
-      padding: 10px 12px;
-      border-radius: 6px;
-      border-left: 6px solid;
-      transition: transform 0.1s;
-      cursor: default;
+      margin-bottom: 10px;
     }
-    .slot:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px var(--sombra-card);
+    #month-year {
+      font-size: 1.25rem;
+      font-weight: bold;
     }
-    .ocupado {
-      border-color: var(--cor-ocupado);
-      cursor: default;
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
     }
-    .disponível {
-      border-color: var(--cor-disponivel);
-      cursor: pointer;
-    }
-    .label {
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .status {
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-
-    /* Mensagem de erro */
-    #erro {
-      color: var(--cor-ocupado);
+    .day-name, .day {
       text-align: center;
-      margin-top: 20px;
-      font-weight: 600;
+      padding: 10px 0;
     }
-
-    /* Toast (notificação temporária) */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--cor-accent-light);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      z-index: 1000;
-      pointer-events: none;
+    .day-name {
+      font-weight: bold;
+      background-color: #f0f0f0;
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* Modal de detalhes do evento */
-    #modal-overlay {
-      display: none;
-      position: fixed;
-      top:0; left:0; right:0; bottom:0;
-      background: rgba(0,0,0,0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    #modal-overlay > div {
-      background: var(--cor-card);
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      position: relative;
-    }
-    #modal-overlay h2 {
-      margin-bottom: 12px;
-      color: var(--cor-accent);
-    }
-    #modal-overlay label {
-      display: block;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-    #modal-overlay input,
-    #modal-overlay textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      margin-bottom: 12px;
+    .day {
       border: 1px solid #ccc;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 14px;
-    }
-    #modal-buttons {
-      text-align: right;
-    }
-    #modal-buttons button {
-      padding: 8px 14px;
-      border-radius: 4px;
-      font-size: 14px;
       cursor: pointer;
     }
-    #modal-buttons .btn-cancel {
-      background: #ccc;
-      border: none;
-      margin-right: 8px;
+    .day.disabled {
+      background-color: #f9f9f9;
+      cursor: default;
+      color: #aaa;
     }
-    #modal-buttons .btn-confirm {
-      background: var(--cor-accent-light);
-      border: none;
-      color: white;
+    .day:hover:not(.disabled) {
+      background-color: #e0e0e0;
     }
-    #modal-buttons .btn-cancel:hover {
-      background: #aaa;
+    #slots-container {
+      width: 100%;
+      max-width: 400px;
     }
-    #modal-buttons .btn-confirm:hover {
-      background: var(--cor-accent);
+    #slots {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100px;
+    }
+    .slot {
+      margin: 5px 0;
+    }
+    .slot button {
+      margin-left: 10px;
+      padding: 5px 10px;
     }
   </style>
 </head>
-
 <body>
-  <!-- Cabeçalho com botões de navegação, filtro, export -->
-  <header>
-    <h1>📅 Disponibilidade do Fábio</h1>
-    <div id="buttons">
-      <button onclick="diminuirSemana()">← Semana anter.</button>
-      <button id="atualizar" onclick="carregarAgenda()">🔄 Atualizar</button>
-      <button onclick="aumentarSemana()">Semana seg. →</button>
-      <button onclick="exportarCSV()">📑 Exportar CSV</button>
-      <button id="exportar" onclick="window.print()">🖨️ Exportar PDF</button>
+  <h1>Agenda Fábio</h1>
+  <div id="calendar-container">
+    <div id="calendar-header">
+      <button id="prev-month" disabled>&lt;</button>
+      <div id="month-year"></div>
+      <button id="next-month">&gt;</button>
     </div>
-    <div id="filtro-container">
-      <label for="filtroData">Filtrar por dia:</label>
-      <input type="date" id="filtroData" onchange="filtrarPorData()" />
-      <button onclick="limparFiltro()">Limpar filtro</button>
+    <div id="calendar">
+      <!-- Dias da semana -->
+      <div class="day-name">Dom</div>
+      <div class="day-name">Seg</div>
+      <div class="day-name">Ter</div>
+      <div class="day-name">Qua</div>
+      <div class="day-name">Qui</div>
+      <div class="day-name">Sex</div>
+      <div class="day-name">Sáb</div>
+      <!-- Dias do mês serão inseridos aqui via JavaScript -->
     </div>
-  </header>
-
-  <!-- Contêiner onde injetamos os dias e blocos -->
-  <div id="agenda"></div>
-  <!-- Mensagem de erro (se falhar ao carregar agenda) -->
-  <p id="erro"></p>
-
-  <!-- Modal para preencher detalhes de um evento -->
-  <div id="modal-overlay">
-    <div>
-      <h2>Detalhes do Evento</h2>
-      <label for="evtTitulo">Título:</label>
-      <input id="evtTitulo" type="text" placeholder="Ex: Reunião com cliente" />
-
-      <label for="evtDescricao">Descrição (opcional):</label>
-      <textarea id="evtDescricao" rows="3" placeholder="Detalhes adicionais..."></textarea>
-
-      <label for="evtLocal">Local (opcional):</label>
-      <input id="evtLocal" type="text" placeholder="Ex: Sala 1" />
-
-      <div id="modal-buttons">
-        <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
-        <button id="btnConfirmar" class="btn-confirm">Confirmar</button>
-      </div>
+  </div>
+  <div id="slots-container">
+    <h2>Horários Disponíveis</h2>
+    <div id="slots">
+      <p>Selecione um dia no calendário para ver os horários disponíveis.</p>
     </div>
   </div>
 
-  <!-- Toast para notificações breves -->
-  <div id="toast" class="toast"></div>
-
   <script>
-    // ===== Variáveis globais =====
-    let diasData = [];       // guarda a resposta JSON de /api/agenda
-    let semanaOffset = 0;    // 0 = próxima semana; -1 = semana anterior; +1 = próxima seguinte
-    let modalData = null;    // armazena { data, inicio, fim } ao abrir modal
+    // Função para formatar o nome do mês em português
+    const meses = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    
+    let hoje = new Date();
+    let mesAtual = hoje.getMonth();
+    let anoAtual = hoje.getFullYear();
 
-    // Retorna “YYYY-MM-DD” de hoje
-    function hojeStr() {
-      const hj = new Date();
-      return hj.toISOString().split("T")[0];
+    function criarCalendario(mes, ano) {
+      const calendarEl = document.getElementById('calendar');
+      calendarEl.querySelectorAll('.day.month-day').forEach(el => el.remove());
+
+      document.getElementById('month-year').textContent = `${meses[mes]} ${ano}`;
+
+      const primeiroDia = new Date(ano, mes, 1).getDay();
+      const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+      // Adicionar dias vazios antes do primeiro dia
+      for (let i = 0; i < primeiroDia; i++) {
+        const emptyEl = document.createElement('div');
+        emptyEl.classList.add('day', 'disabled', 'month-day');
+        calendarEl.appendChild(emptyEl);
+      }
+
+      // Adicionar dias do mês
+      for (let dia = 1; dia <= diasNoMes; dia++) {
+        const diaEl = document.createElement('div');
+        diaEl.textContent = dia;
+        diaEl.classList.add('day', 'month-day');
+
+        const dataClick = new Date(ano, mes, dia);
+        // Desabilitar dias anteriores a hoje
+        if (dataClick < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
+          diaEl.classList.add('disabled');
+        } else {
+          diaEl.addEventListener('click', () => mostrarSlots(dia, mes, ano));
+        }
+
+        calendarEl.appendChild(diaEl);
+      }
     }
-    // Retorna “HH:MM” zero‐padded da hora atual
-    function horaAtualStr() {
-      const hj = new Date();
-      const horas = String(hj.getHours()).padStart(2, "0");
-      const mins = String(hj.getMinutes()).padStart(2, "0");
-      return `${horas}:${mins}`;
-    }
 
-    // ===== Função para exibir toast =====
-    function showToast(mensagem, duracaoMs = 3000) {
-      const toastEl = document.getElementById("toast");
-      toastEl.textContent = mensagem;
-      toastEl.classList.add("show");
-      setTimeout(() => {
-        toastEl.classList.remove("show");
-      }, duracaoMs);
-    }
+    function mostrarSlots(dia, mes, ano) {
+      const slotsEl = document.getElementById('slots');
+      slotsEl.innerHTML = '';
 
-    // ===== Função principal: carrega agenda da API =====
-    async function carregarAgenda() {
-      try {
-        const res = await fetch(`/api/agenda?offset=${semanaOffset}`);
-        if (!res.ok) throw new Error("API retornou " + res.status);
-        const dados = await res.json();
+      const dataSelecionada = `${dia}/${mes + 1}/${ano}`;
+      const titulo = document.createElement('p');
+      titulo.textContent = `Horários para ${dataSelecionada}`;
+      slotsEl.appendChild(titulo);
 
-        diasData = dados; // guarda globalmente para filtro/CSV
+      // Exemplo de horários fixos; em produção, buscar do servidor via API
+      const horarios = [
+        '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'
+      ];
 
-        const container = document.getElementById("agenda");
-        container.innerHTML = "";
-        document.getElementById("erro").innerText = "";
+      horarios.forEach(horario => {
+        const slotEl = document.createElement('div');
+        slotEl.classList.add('slot');
+        slotEl.textContent = horario;
 
-        const hoje = hojeStr();
-        const horaAgora = horaAtualStr();
-        const diasFuturos = dados.filter(d => d.data >= hoje);
-
-        diasFuturos.forEach(diaObj => {
-          const diaCard = document.createElement("div");
-          diaCard.className = "dia-card";
-          if (diaObj.data === hoje) {
-            diaCard.classList.add("hoje");
-          }
-
-          const diaHeader = document.createElement("div");
-          diaHeader.className = "dia-header";
-          diaHeader.innerText = diaObj.data;
-          diaCard.appendChild(diaHeader);
-
-          const grid = document.createElement("div");
-          grid.className = "blocos-grid";
-
-          diaObj.blocos.forEach(bloco => {
-            // Se for o dia atual, só mostrar blocos após a hora atual
-            if (diaObj.data === hoje && bloco.inicio < horaAgora) return;
-
-            const divSlot = document.createElement("div");
-            divSlot.className = "slot " + bloco.status;
-            // Atributos data-dia e data-inicio para identificar depois
-            divSlot.setAttribute("data-dia", diaObj.data);
-            divSlot.setAttribute("data-inicio", bloco.inicio);
-            divSlot.innerHTML = `
-              <span class="label">${bloco.inicio} – ${bloco.fim}</span>
-              <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
-            `;
-            if (bloco.status === "disponível") {
-              divSlot.onclick = () => abrirModal(diaObj.data, bloco.inicio, bloco.fim);
-            }
-            grid.appendChild(divSlot);
-          });
-
-          if (grid.childElementCount === 0) {
-            const vazio = document.createElement("p");
-            vazio.style.textAlign = "center";
-            vazio.style.marginTop = "12px";
-            vazio.style.color = "#777";
-            vazio.innerText = "Sem horários disponíveis hoje.";
-            diaCard.appendChild(vazio);
-          } else {
-            diaCard.appendChild(grid);
-          }
-
-          container.appendChild(diaCard);
+        const btnMarcar = document.createElement('button');
+        btnMarcar.textContent = 'Agendar';
+        btnMarcar.addEventListener('click', () => {
+          // Lógica de agendamento: enviar para servidor ou abrir modal para confirmação
+          alert(`Agendado em ${dataSelecionada} às ${horario}`);
         });
 
-        if (diasFuturos.length === 0) {
-          container.innerHTML = "<p style='text-align:center;color:#777;margin-top:20px;'>Sem dados de disponibilidade para os próximos dias.</p>";
-        }
-      } catch (e) {
-        document.getElementById("erro").innerText = "Erro ao carregar disponibilidade.";
-        console.error("Erro no carregarAgenda():", e);
-      }
-    }
-
-    // ===== Navegação entre semanas =====
-    function aumentarSemana() {
-      semanaOffset++;
-      carregarAgenda();
-    }
-    function diminuirSemana() {
-      semanaOffset--;
-      carregarAgenda();
-    }
-
-    // ===== Filtrar por dia específico =====
-    function filtrarPorData() {
-      const filtro = document.getElementById("filtroData").value;
-      if (!filtro) return carregarAgenda();
-
-      const container = document.getElementById("agenda");
-      container.innerHTML = "";
-
-      const diaSelecionado = diasData.find(d => d.data === filtro);
-      if (!diaSelecionado) {
-        container.innerHTML = `<p style='text-align:center;color:#777;margin-top:20px;'>Sem dados para ${filtro}.</p>`;
-        return;
-      }
-
-      const diaCard = document.createElement("div");
-      diaCard.className = "dia-card";
-      if (diaSelecionado.data === hojeStr()) {
-        diaCard.classList.add("hoje");
-      }
-
-      const diaHeader = document.createElement("div");
-      diaHeader.className = "dia-header";
-      diaHeader.innerText = diaSelecionado.data;
-      diaCard.appendChild(diaHeader);
-
-      const grid = document.createElement("div");
-      grid.className = "blocos-grid";
-
-      diaSelecionado.blocos.forEach(bloco => {
-        const divSlot = document.createElement("div");
-        divSlot.className = "slot " + bloco.status;
-        divSlot.setAttribute("data-dia", diaSelecionado.data);
-        divSlot.setAttribute("data-inicio", bloco.inicio);
-        divSlot.innerHTML = `
-          <span class="label">${bloco.inicio} – ${bloco.fim}</span>
-          <span class="status">${bloco.status.charAt(0).toUpperCase() + bloco.status.slice(1)}</span>
-        `;
-        if (bloco.status === "disponível") {
-          divSlot.onclick = () => abrirModal(diaSelecionado.data, bloco.inicio, bloco.fim);
-        }
-        grid.appendChild(divSlot);
+        slotEl.appendChild(btnMarcar);
+        slotsEl.appendChild(slotEl);
       });
+    }
 
-      if (grid.childElementCount === 0) {
-        const vazio = document.createElement("p");
-        vazio.style.textAlign = "center";
-        vazio.style.marginTop = "12px";
-        vazio.style.color = "#777";
-        vazio.innerText = "Sem horários disponíveis.";
-        diaCard.appendChild(vazio);
-      } else {
-        diaCard.appendChild(grid);
+    function mudarMes(delta) {
+      mesAtual += delta;
+      if (mesAtual < 0) {
+        mesAtual = 11;
+        anoAtual--;
+      } else if (mesAtual > 11) {
+        mesAtual = 0;
+        anoAtual++;
       }
-
-      container.appendChild(diaCard);
-    }
-    function limparFiltro() {
-      document.getElementById("filtroData").value = "";
-      carregarAgenda();
+      criarCalendario(mesAtual, anoAtual);
     }
 
-    // ===== Modal para detalhes do evento =====
-    function abrirModal(data, inicio, fim) {
-      modalData = { data, inicio, fim };
-      document.getElementById("evtTitulo").value = "";
-      document.getElementById("evtDescricao").value = "";
-      document.getElementById("evtLocal").value = "";
-      document.getElementById("modal-overlay").style.display = "flex";
-    }
-    function fecharModal() {
-      document.getElementById("modal-overlay").style.display = "none";
-      modalData = null;
-    }
+    document.getElementById('next-month').addEventListener('click', () => mudarMes(1));
+    document.getElementById('prev-month').addEventListener('click', () => mudarMes(-1));
 
-    async function confirmarModal() {
-      if (!modalData) return;
-      const titulo = document.getElementById("evtTitulo").value.trim() || "Evento via app";
-      const descricao = document.getElementById("evtDescricao").value.trim();
-      const local = document.getElementById("evtLocal").value.trim();
-
-      const evento = {
-        titulo,
-        descricao,
-        local,
-        data_inicio: modalData.data,
-        hora_inicio: modalData.inicio,
-        hora_fim: modalData.fim
-      };
-
-      fecharModal();
-
-      try {
-        const res = await fetch("/api/create-event", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(evento)
-        });
-
-        if (!res.ok) {
-          const erroJson = await res.json().catch(() => null);
-          if (erroJson && (erroJson.error || erroJson.details)) {
-            throw new Error(`Status ${res.status}:\n${erroJson.error || ""}${erroJson.details ? "\nDetalhes: " + erroJson.details : ""}`);
-          }
-          const textoErro = await res.text();
-          throw new Error(`Status ${res.status}: ${textoErro}`);
-        }
-
-        showToast("✅ Evento marcado com sucesso!");
-        carregarAgenda();
-      } catch (err) {
-        showToast("❌ Erro ao marcar evento: " + err.message);
-        console.error("Erro no confirmarModal():", err);
-      }
-    }
-
-    // O click no slot chama abrirModal(), portanto esta função não é mais usada diretamente:
-    function marcarEvento(data, inicio, fim) {
-      abrirModal(data, inicio, fim);
-    }
-
-    // Botão “Confirmar” do modal
-    document.getElementById("btnConfirmar").onclick = confirmarModal;
-
-    // ===== Exportar para CSV =====
-    function exportarCSV() {
-      if (!diasData || diasData.length === 0) {
-        showToast("Sem dados para exportar.");
-        return;
-      }
-
-      let csvConteudo = "Data;Hora Início;Hora Fim;Status\n";
-      diasData.forEach(diaObj => {
-        diaObj.blocos.forEach(bloco => {
-          csvConteudo += `${diaObj.data};${bloco.inicio};${bloco.fim};${bloco.status}\n`;
-        });
-      });
-
-      const blob = new Blob([csvConteudo], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `agenda_${hojeStr()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // ===== Executa ao abrir a página =====
-    carregarAgenda();
+    // Inicializa calendário no mês atual
+    criarCalendario(mesAtual, anoAtual);
   </script>
 </body>
 </html>
+
