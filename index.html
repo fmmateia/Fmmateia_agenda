@@ -2,195 +2,587 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agenda Fábio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📅 Calendário de Disponibilidade - Fábio</title>
+
+  <!-- Fonte Inter e CSS geral -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    :root {
+      --cor-bg: #f4f6f8;
+      --cor-card: #ffffff;
+      --cor-texto: #333333;
+      --cor-accent: #0055cc;
+      --cor-accent-light: #0070f3;
+      --cor-ocupado: #ff4d4f;
+      --cor-disponivel: #52c41a;
+      --sombra-card: rgba(0, 0, 0, 0.08);
+      --grid-gap: 8px;
+      --dia-tamanho: 40px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --cor-bg: #121212;
+        --cor-card: #1e1e1e;
+        --cor-texto: #e4e4e4;
+        --cor-accent: #3ea6ff;
+        --cor-ocupado: #ff7875;
+        --cor-disponivel: #95de64;
+        --sombra-card: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html {
+      font-family: 'Inter', sans-serif;
+      background: var(--cor-bg);
+      color: var(--cor-texto);
+      scroll-behavior: smooth;
+    }
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
     }
-    #calendar-container {
-      width: 100%;
-      max-width: 400px;
-      margin-bottom: 20px;
+    h1, h2, h3 {
+      font-weight: 700;
+      color: var(--cor-accent);
     }
-    #calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+
+    /* Cabeçalho fixo com navegação de meses e filtros */
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--cor-card);
+      z-index: 100;
+      box-shadow: 0 2px 4px var(--sombra-card);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+    }
+    header h1 {
+      text-align: center;
+      font-size: 22px;
       margin-bottom: 10px;
     }
-    #month-year {
-      font-size: 1.25rem;
-      font-weight: bold;
+    #monthControls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
     }
+    #monthControls button {
+      background: var(--cor-accent-light);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #monthControls button:hover {
+      background: var(--cor-accent);
+    }
+    #monthLabel {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    #filtro-container {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    #filtro-container label {
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    #filtro-container input,
+    #filtro-container button {
+      margin-left: 4px;
+      margin-right: 4px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    #filtro-container button {
+      background: var(--cor-accent-light);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #filtro-container button:hover {
+      background: var(--cor-accent);
+    }
+
+    /* Estilo do grid do calendário */
     #calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
+      gap: var(--grid-gap);
+      margin-bottom: 20px;
     }
-    .day-name, .day {
+    .calendar-header {
       text-align: center;
-      padding: 10px 0;
+      font-weight: 600;
+      padding: 4px 0;
+      background: var(--cor-card);
+      border-radius: 4px;
+      box-shadow: 0 1px 3px var(--sombra-card);
     }
-    .day-name {
-      font-weight: bold;
-      background-color: #f0f0f0;
+    .day-cell {
+      width: 100%;
+      min-height: var(--dia-tamanho);
+      aspect-ratio: 1 / 1;
+      background: var(--cor-card);
+      border: 2px solid transparent;
+      border-radius: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      cursor: default;
+      font-size: 14px;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 1px 3px var(--sombra-card);
     }
-    .day {
-      border: 1px solid #ccc;
+    .day-cell:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 6px var(--sombra-card);
+    }
+    .day-cell.disabled {
+      color: #999;
+      background: #e0e0e0;
+      cursor: default;
+    }
+    .day-cell.hoje {
+      border-color: var(--cor-accent);
+      background: #eef7ff;
+    }
+    .day-cell.livre {
+      border-color: var(--cor-disponivel);
       cursor: pointer;
     }
-    .day.disabled {
-      background-color: #f9f9f9;
+    .day-cell.ocupado {
+      border-color: var(--cor-ocupado);
       cursor: default;
-      color: #aaa;
     }
-    .day:hover:not(.disabled) {
-      background-color: #e0e0e0;
+    .day-number {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-weight: 600;
     }
+    /* Indicador pequeno no canto inferior direito */
+    .day-cell .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+    }
+    .day-cell.livre .dot {
+      background: var(--cor-disponivel);
+    }
+    .day-cell.ocupado .dot {
+      background: var(--cor-ocupado);
+    }
+
+    /* Slots de horário */
     #slots-container {
-      width: 100%;
-      max-width: 400px;
+      margin-bottom: 20px;
+      background: var(--cor-card);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px var(--sombra-card);
+      padding: 16px;
     }
-    #slots {
-      border: 1px solid #ccc;
-      padding: 10px;
-      min-height: 100px;
+    #slots-container h2 {
+      margin-bottom: 12px;
+      text-align: center;
     }
     .slot {
-      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .slot:last-child {
+      border-bottom: none;
     }
     .slot button {
-      margin-left: 10px;
-      padding: 5px 10px;
+      background: var(--cor-accent-light);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .slot button:hover {
+      background: var(--cor-accent);
+    }
+    .slot button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Toast (notificação breve) */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--cor-accent-light);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
+
 <body>
-  <h1>Agenda Fábio</h1>
-  <div id="calendar-container">
-    <div id="calendar-header">
-      <button id="prev-month" disabled>&lt;</button>
-      <div id="month-year"></div>
-      <button id="next-month">&gt;</button>
+  <!-- Cabeçalho com navegação de meses + filtro + export -->
+  <header>
+    <h1>🗓️ Calendário de Disponibilidade</h1>
+    <div id="monthControls">
+      <button onclick="diminuirMes()">← Mês anterior</button>
+      <span id="monthLabel">…</span>
+      <button onclick="aumentarMes()">Mês seguinte →</button>
     </div>
-    <div id="calendar">
-      <!-- Dias da semana -->
-      <div class="day-name">Dom</div>
-      <div class="day-name">Seg</div>
-      <div class="day-name">Ter</div>
-      <div class="day-name">Qua</div>
-      <div class="day-name">Qui</div>
-      <div class="day-name">Sex</div>
-      <div class="day-name">Sáb</div>
-      <!-- Dias do mês serão inseridos aqui via JavaScript -->
+
+    <div id="filtro-container">
+      <label for="filtroData">Filtrar por dia:</label>
+      <input type="date" id="filtroData" onchange="filtrarPorData()" />
+      <button onclick="limparFiltro()">Limpar filtro</button>
     </div>
+
+    <div id="buttons">
+      <button onclick="exportarCSV()">📑 Exportar CSV</button>
+      <button id="exportar" onclick="window.print()">🖨️ Exportar PDF</button>
+    </div>
+  </header>
+
+  <!-- Contêiner do calendário -->
+  <div id="calendar"></div>
+  <!-- Mensagem de erro (caso falhe ao carregar) -->
+  <p id="erro" style="text-align:center; margin-top:12px;"></p>
+
+  <!-- Slots de horários disponíveis -->
+  <div id="slots-container" style="display: none;">
+    <h2>Horários Disponíveis para <span id="slots-data"></span></h2>
+    <div id="slots-list"></div>
   </div>
-  <div id="slots-container">
-    <h2>Horários Disponíveis</h2>
-    <div id="slots">
-      <p>Selecione um dia no calendário para ver os horários disponíveis.</p>
-    </div>
-  </div>
+
+  <!-- Toast para notificações breves -->
+  <div id="toast" class="toast"></div>
 
   <script>
-    // Função para formatar o nome do mês em português
-    const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    let hoje = new Date();
-    let mesAtual = hoje.getMonth();
-    let anoAtual = hoje.getFullYear();
+    // ===== Variáveis globais =====
+    let occupiedDays = [];   // array de strings “YYYY-MM-DD” proveniente do backend
+    let monthOffset = 0;     // 0 = mês atual; -1 = mês anterior; +1 = mês seguinte
+    let monthAtivo = null;   // objeto { month: 6, year: 2025 } retornado pela API
 
-    function criarCalendario(mes, ano) {
-      const calendarEl = document.getElementById('calendar');
-      calendarEl.querySelectorAll('.day.month-day').forEach(el => el.remove());
+    // Exemplo de horários fixos; em produção, buscar do servidor via API
+    const horariosFixos = [ '09:00', '10:00', '11:00', '14:00', '15:00', '16:00' ];
 
-      document.getElementById('month-year').textContent = `${meses[mes]} ${ano}`;
+    // Retorna “YYYY-MM-DD” de hoje
+    function hojeStr() {
+      const hj = new Date();
+      return hj.toISOString().split("T")[0];
+    }
 
-      const primeiroDia = new Date(ano, mes, 1).getDay();
-      const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    // Exibe toast com mensagem e desaparece após duracaoMs
+    function showToast(mensagem, duracaoMs = 3000) {
+      const toastEl = document.getElementById("toast");
+      toastEl.textContent = mensagem;
+      toastEl.classList.add("show");
+      setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, duracaoMs);
+    }
 
-      // Adicionar dias vazios antes do primeiro dia
-      for (let i = 0; i < primeiroDia; i++) {
-        const emptyEl = document.createElement('div');
-        emptyEl.classList.add('day', 'disabled', 'month-day');
-        calendarEl.appendChild(emptyEl);
-      }
+    // ===== Função que busca dados do mês no backend e renderiza calendário =====
+    async function carregarCalendario() {
+      try {
+        const res = await fetch(`/api/agenda?monthOffset=${monthOffset}`);
+        if (!res.ok) throw new Error("API retornou " + res.status);
+        const dados = await res.json();
+        // dados = { month: 6, year: 2025, occupied: [ "2025-06-04", "2025-06-10", … ] }
 
-      // Adicionar dias do mês
-      for (let dia = 1; dia <= diasNoMes; dia++) {
-        const diaEl = document.createElement('div');
-        diaEl.textContent = dia;
-        diaEl.classList.add('day', 'month-day');
+        occupiedDays = dados.occupied;
+        monthAtivo = { month: dados.month, year: dados.year };
 
-        const dataClick = new Date(ano, mes, dia);
-        // Desabilitar dias anteriores a hoje
-        if (dataClick < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
-          diaEl.classList.add('disabled');
-        } else {
-          diaEl.addEventListener('click', () => mostrarSlots(dia, mes, ano));
-        }
-
-        calendarEl.appendChild(diaEl);
+        document.getElementById("erro").innerText = "";
+        gerarGridCalendario(dados.month, dados.year, occupiedDays);
+      } catch (e) {
+        document.getElementById("erro").innerText = "Erro ao carregar calendário.";
+        console.error("Erro no carregarCalendario():", e);
       }
     }
 
-    function mostrarSlots(dia, mes, ano) {
-      const slotsEl = document.getElementById('slots');
-      slotsEl.innerHTML = '';
+    // ===== Gera o grid do calendário para mês e ano fornecidos =====
+    function gerarGridCalendario(mes, ano, occupied) {
+      const calendarEl = document.getElementById("calendar");
+      calendarEl.innerHTML = "";
 
-      const dataSelecionada = `${dia}/${mes + 1}/${ano}`;
-      const titulo = document.createElement('p');
-      titulo.textContent = `Horários para ${dataSelecionada}`;
-      slotsEl.appendChild(titulo);
+      // 1) Cabeçalhos dos dias da semana:
+      const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      diasSemana.forEach(dia => {
+        const th = document.createElement("div");
+        th.className = "calendar-header";
+        th.innerText = dia;
+        calendarEl.appendChild(th);
+      });
 
-      // Exemplo de horários fixos; em produção, buscar do servidor via API
-      const horarios = [
-        '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'
+      // 2) Determinar qual o primeiro dia da semana do mês
+      const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay();
+      // 3) Quantos dias tem o mês
+      const totalDiasMes = new Date(ano, mes, 0).getDate();
+
+      // 4) Preencher “células em branco” antes do primeiro dia
+      for (let i = 0; i < primeiroDiaSemana; i++) {
+        const vazio = document.createElement("div");
+        vazio.className = "day-cell disabled";
+        calendarEl.appendChild(vazio);
+      }
+
+      // 5) Agora preencher cada dia do mês
+      const hoje = hojeStr();
+      for (let dia = 1; dia <= totalDiasMes; dia++) {
+        const dateStr = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+
+        // Se for hoje, adiciona classe “hoje”
+        if (dateStr === hoje) {
+          cell.classList.add("hoje");
+        }
+
+        // Verificar se está em occupied (evento presente)
+        if (occupied.includes(dateStr)) {
+          cell.classList.add("ocupado");
+        } else {
+          // Apenas dias futuros (>= hoje) ficam clicáveis como “livre”
+          if (dateStr >= hoje) {
+            cell.classList.add("livre");
+            cell.onclick = () => mostrarSlots(dateStr);
+          } else {
+            cell.classList.add("disabled");
+          }
+        }
+
+        // Número do dia no canto superior esquerdo
+        const numSpan = document.createElement("span");
+        numSpan.className = "day-number";
+        numSpan.innerText = dia;
+        cell.appendChild(numSpan);
+
+        // Pequeno “dot” indicativo se ocupado ou livre
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        cell.appendChild(dot);
+
+        calendarEl.appendChild(cell);
+      }
+
+      // 6) Atualizar label do mês (“Junho 2025”, etc.)
+      const monthNames = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
       ];
+      const label = document.getElementById("monthLabel");
+      label.innerText = `${monthNames[mes - 1]} ${ano}`;
 
-      horarios.forEach(horario => {
+      // Esconder slots ao trocar de mês
+      document.getElementById("slots-container").style.display = "none";
+    }
+
+    // ===== Mostrar slots disponíveis ao clicar no dia =====
+    function mostrarSlots(dateStr) {
+      const slotsContainer = document.getElementById("slots-container");
+      const slotsList = document.getElementById("slots-list");
+      const slotsData = document.getElementById("slots-data");
+
+      // Formatar data para DD/MM/YYYY
+      const partes = dateStr.split('-');
+      const formatoBr = `${String(partes[2]).padStart(2, '0')}/${String(partes[1]).padStart(2, '0')}/${partes[0]}`;
+      slotsData.innerText = formatoBr;
+
+      slotsList.innerHTML = "";
+
+      // Aqui você poderia buscar horários do servidor para a data específica
+      // Por enquanto, usamos horariosFixos e marcamos como indisponível se tiver ocupado
+
+      horariosFixos.forEach(horario => {
         const slotEl = document.createElement('div');
-        slotEl.classList.add('slot');
-        slotEl.textContent = horario;
+        slotEl.className = 'slot';
 
-        const btnMarcar = document.createElement('button');
-        btnMarcar.textContent = 'Agendar';
-        btnMarcar.addEventListener('click', () => {
-          // Lógica de agendamento: enviar para servidor ou abrir modal para confirmação
-          alert(`Agendado em ${dataSelecionada} às ${horario}`);
-        });
+        const label = document.createElement('span');
+        label.innerText = horario;
+        slotEl.appendChild(label);
 
-        slotEl.appendChild(btnMarcar);
-        slotsEl.appendChild(slotEl);
+        const btn = document.createElement('button');
+        btn.innerText = 'Agendar';
+        // Verifica se o horário está ocupado via API (opcional)
+        btn.onclick = () => agendarHorario(dateStr, horario);
+        slotEl.appendChild(btn);
+
+        slotsList.appendChild(slotEl);
+      });
+
+      slotsContainer.style.display = 'block';
+      // Rolar até os slots
+      slotsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function agendarHorario(dateStr, horario) {
+      // Envia agendamento para backend
+      const agendamento = { data: dateStr, horario };
+      fetch('/api/agendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(agendamento)
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => null);
+          throw new Error(err && err.error ? err.error : 'Erro no servidor');
+        }
+        return res.json();
+      })
+      .then(resp => {
+        if (resp.sucesso) {
+          showToast(`✅ Agendado para ${dateStr} às ${horario}`);
+          carregarCalendario();
+        } else {
+          showToast('❌ Não foi possível agendar.');
+        }
+      })
+      .catch(e => {
+        console.error('Erro no agendarHorario():', e);
+        showToast('❌ Erro ao enviar agendamento.');
       });
     }
 
-    function mudarMes(delta) {
-      mesAtual += delta;
-      if (mesAtual < 0) {
-        mesAtual = 11;
-        anoAtual--;
-      } else if (mesAtual > 11) {
-        mesAtual = 0;
-        anoAtual++;
-      }
-      criarCalendario(mesAtual, anoAtual);
+    // ===== Navegar entre meses =====
+    function aumentarMes() {
+      monthOffset++;
+      carregarCalendario();
+    }
+    function diminuirMes() {
+      monthOffset--;
+      carregarCalendario();
     }
 
-    document.getElementById('next-month').addEventListener('click', () => mudarMes(1));
-    document.getElementById('prev-month').addEventListener('click', () => mudarMes(-1));
+    // ===== Filtrar por data via input date =====
+    function filtrarPorData() {
+      const filtro = document.getElementById("filtroData").value; // “YYYY-MM-DD”
+      if (!filtro) return carregarCalendario(); // sem filtro → recarrega inteiro
 
-    // Inicializa calendário no mês atual
-    criarCalendario(mesAtual, anoAtual);
+      const container = document.getElementById("calendar");
+      container.innerHTML = "";
+
+      // Extrair mês e ano da data filtrada
+      const partes = filtro.split("-");
+      const anoFiltro = parseInt(partes[0], 10);
+      const mesFiltro = parseInt(partes[1], 10);
+
+      // Se o filtro for para um mês diferente do mês ativo, recarrega esse mês antes
+      if (!monthAtivo || monthAtivo.year !== anoFiltro || monthAtivo.month !== mesFiltro) {
+        const hoje = new Date();
+        const diffMeses = (anoFiltro - hoje.getFullYear()) * 12 + (mesFiltro - (hoje.getMonth() + 1));
+        monthOffset = diffMeses;
+        carregarCalendario();
+        setTimeout(() => filtrarPorData(), 500);
+        return;
+      }
+
+      // Se estamos no mês ativo correto → exibir só um dia
+      const dateStr = filtro;
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      if (filtro === hojeStr()) cell.classList.add("hoje");
+      if (occupiedDays.includes(filtro)) cell.classList.add("ocupado");
+      else if (filtro >= hojeStr()) {
+        cell.classList.add("livre");
+        cell.onclick = () => mostrarSlots(filtro);
+      } else {
+        cell.classList.add("disabled");
+      }
+
+      const diaNum = parseInt(partes[2], 10);
+      const numSpan = document.createElement("span");
+      numSpan.className = "day-number";
+      numSpan.innerText = diaNum;
+      cell.appendChild(numSpan);
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      cell.appendChild(dot);
+
+      const tituloFiltro = document.createElement("h2");
+      tituloFiltro.style.textAlign = "center";
+      tituloFiltro.style.marginBottom = "12px";
+      tituloFiltro.innerText = filtro;
+
+      const calendarEl = document.getElementById("calendar");
+      calendarEl.appendChild(tituloFiltro);
+      calendarEl.appendChild(cell);
+    }
+
+    function limparFiltro() {
+      document.getElementById("filtroData").value = "";
+      carregarCalendario();
+    }
+
+    // ===== Exportar CSV =====
+    function exportarCSV() {
+      if (!monthAtivo) {
+        showToast("Carrega o calendário primeiro.");
+        return;
+      }
+      if (!occupiedDays) occupiedDays = [];
+
+      let csvConteudo = "Data;Status\n";
+      const totalDiasMes = new Date(monthAtivo.year, monthAtivo.month, 0).getDate();
+      for (let dia = 1; dia <= totalDiasMes; dia++) {
+        const dateStr = `${monthAtivo.year}-${String(monthAtivo.month).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+        const status = occupiedDays.includes(dateStr) ? "ocupado" : "livre";
+        csvConteudo += `${dateStr};${status}\n`;
+      }
+
+      const blob = new Blob([csvConteudo], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `calendario_${monthAtivo.year}-${String(monthAtivo.month).padStart(2, "0")}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ===== Ao carregar a página, chama o calendário do mês atual =====
+    carregarCalendario();
   </script>
 </body>
 </html>
-
